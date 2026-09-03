@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">BLUE TEAM · SOC · GRC</p>
+  <h1>Ferramentas de segurança em um só lugar.</h1>
+  <p>Uma plataforma modular para análise, resposta a incidentes e automação.</p>
+</section>
+
+<section class="tool-grid" aria-label="Ferramentas disponíveis">
+  {% for tool in tools %}
+  <article class="tool-card">
+    <span class="status">{{ tool.status }}</span>
+    <h2>{{ tool.name }}</h2>
+    <p>{{ tool.description }}</p>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}
