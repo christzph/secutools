@@ -12,6 +12,7 @@
     <span class="status">{{ tool.status }}</span>
     <h2>{{ tool.name }}</h2>
     <p>{{ tool.description }}</p>
+    {% if tool.url %}<a class="tool-link" href="{{ tool.url }}">Abrir ferramenta</a>{% endif %}
   </article>
   {% endfor %}
 </section>

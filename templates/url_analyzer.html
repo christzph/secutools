@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Analisador de URLs · SecuTools{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">ANÁLISE DEFENSIVA</p>
+  <h1>Analisador de URLs</h1>
+  <p>Inspecione a estrutura de um link sem acessá-lo. A análise é local e não consulta o destino.</p>
+</section>
+
+<form class="url-form" method="post">
+  <label for="url">URL para analisar</label>
+  <div class="form-row">
+    <input id="url" name="url" type="text" value="{{ result.url if result else '' }}"
+           placeholder="https://exemplo.com/login" required>
+    <button type="submit">Analisar</button>
+  </div>
+</form>
+
+{% if result %}
+<section class="analysis-result" aria-live="polite">
+  <p class="eyebrow">RESULTADO</p>
+  <h2>Risco {{ result.risk }}</h2>
+  <ul>
+    {% for finding in result.findings %}<li>{{ finding }}</li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}
