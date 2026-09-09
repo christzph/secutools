@@ -31,13 +31,14 @@ def test_analyze_ssh_logs_counts_attempts_by_ip():
             "Failed password for root from 192.0.2.10 port 22 ssh2",
             "Failed password for invalid user admin from 192.0.2.10 port 22 ssh2",
             "Failed password for root from 192.0.2.11 port 22 ssh2",
+            "Accepted password for analyst from 192.0.2.12 port 22 ssh2",
         ]
     )
 
     result = analyze_ssh_logs(logs)
 
     assert result["total_failures"] == 3
-    assert result["unique_ips"] == 2
+    assert result["unique_ips"] == 3
     assert result["top_attacker"] == "192.0.2.10"
     assert result["top_attacker_attempts"] == 2
 
@@ -53,4 +54,5 @@ def test_ssh_log_analyzer_renders_analysis_result():
     )
 
     assert response.status_code == 200
-    assert b"Falhas de autentica" in response.data
+    assert b">Risco<" in response.data
+    assert b">Falhas<" in response.data

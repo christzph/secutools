@@ -46,12 +46,24 @@ def analyze_url(value: str) -> dict[str, object]:
 
 def analyze_ssh_logs(log_text: str) -> dict[str, object]:
     failures: list[dict[str, str]] = []
+    source_ips: set[str] = set()
     pattern = re.compile(
         r"Failed password for (?:invalid user )?(?P<user>\S+) from "
         r"(?P<ip>\S+)"
     )
+    source_pattern = re.compile(r"\bfrom (?P<ip>\S+)")
 
     for line in log_text.splitlines():
+        source_match = source_pattern.search(line)
+        if source_match:
+            candidate_ip = source_match.group("ip").rstrip(",")
+            try:
+                ip_address(candidate_ip)
+            except ValueError:
+                pass
+            else:
+                source_ips.add(candidate_ip)
+
         match = pattern.search(line)
         if match:
             failures.append(
@@ -68,7 +80,7 @@ def analyze_ssh_logs(log_text: str) -> dict[str, object]:
     risk = "Baixo" if total_failures < 5 else "Moderado" if total_failures < 10 else "Alto"
     return {
         "total_failures": total_failures,
-        "unique_ips": len(by_ip),
+        "unique_ips": len(source_ips),
         "top_attacker": top_attacker,
         "top_attacker_attempts": by_ip.get(top_attacker, 0) if top_attacker else 0,
         "risk": risk,

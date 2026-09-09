@@ -1,24 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Analisador de Logs SSH · SecuTools{% endblock %}
+{% block content %}
 <section class="hero">
   <p class="eyebrow">ANÁLISE DEFENSIVA</p>
   <h1>Analisador de Logs SSH</h1>
   <p>Cole um trecho de log local para identificar falhas de autenticação e possíveis tentativas de força bruta.</p>
 </section>
 
-<form class="url-form" method="post">
-  <label for="logs">Logs SSH</label>
+<form class="log-form" method="post">
+  <div class="field-heading">
+    <label for="logs">Logs SSH</label>
+    <span>Formato: auth.log</span>
+  </div>
   <textarea id="logs" name="logs" rows="12"
             placeholder="Cole aqui as linhas do auth.log" required></textarea>
-  <button type="submit">Analisar logs</button>
+  <button class="submit-button" type="submit">Analisar logs</button>
 </form>
 
+{% if result %}
 <section class="analysis-result" aria-live="polite">
   <p class="eyebrow">RESULTADO</p>
-  <h2>Risco {{ result.risk }}</h2>
-  <ul>
-    <li>Falhas de autenticação: {{ result.total_failures }}</li>
-    <li>IPs de origem: {{ result.unique_ips }}</li>
-    <li>IP com mais tentativas: {{ result.top_attacker or "Nenhum identificado" }}</li>
-    <li>Tentativas do IP principal: {{ result.top_attacker_attempts }}</li>
-  </ul>
+  <div class="metric-grid">
+    <div class="metric metric-risk">
+      <span>Risco</span>
+      <strong>{{ result.risk }}</strong>
+    </div>
+    <div class="metric">
+      <span>Falhas</span>
+      <strong>{{ result.total_failures }}</strong>
+    </div>
+    <div class="metric">
+      <span>IPs de origem</span>
+      <strong>{{ result.unique_ips }}</strong>
+    </div>
+    <div class="metric">
+      <span>IP principal</span>
+      <strong>{{ result.top_attacker or "Nenhum" }}</strong>
+    </div>
+    <div class="metric">
+      <span>Tentativas do IP principal</span>
+      <strong>{{ result.top_attacker_attempts }}</strong>
+    </div>
+  </div>
 </section>
-
+{% endif %}
+{% endblock %}

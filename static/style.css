@@ -89,10 +89,30 @@ p {
   max-width: 760px;
 }
 
+.log-form {
+  max-width: 900px;
+}
+
 .url-form label {
   display: block;
   font-weight: 700;
   margin-bottom: 0.5rem;
+}
+
+.field-heading {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.field-heading label {
+  font-weight: 700;
+}
+
+.field-heading span {
+  color: #71809f;
+  font-size: 0.8rem;
 }
 
 .form-row {
@@ -116,13 +136,24 @@ input {
 
 textarea {
   background: #141d33;
+  border: 1px solid #3b4a70;
+  border-radius: 8px;
   color: #e5e7eb;
   display: block;
   font: inherit;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  line-height: 1.5;
   margin-bottom: 0.75rem;
   padding: 0.8rem 1rem;
   resize: vertical;
   width: 100%;
+}
+
+textarea:focus,
+input:focus,
+button:focus-visible {
+  outline: 2px solid #67e8f9;
+  outline-offset: 2px;
 }
 
 button {
@@ -130,6 +161,10 @@ button {
   color: #0c1222;
   cursor: pointer;
   font-weight: 700;
+}
+
+.submit-button {
+  min-width: 150px;
 }
 
 .analysis-result {
@@ -143,4 +178,57 @@ button {
 
 .analysis-result h2 {
   margin-top: 0.75rem;
+}
+
+.metric-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: 1.5rem;
+}
+
+.metric {
+  background: #0c1222;
+  border: 1px solid #26324d;
+  border-radius: 8px;
+  min-width: 0;
+  padding: 1rem;
+}
+
+.metric span {
+  color: #94a3b8;
+  display: block;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.metric strong {
+  color: #e5e7eb;
+  display: block;
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+
+.metric-risk strong {
+  color: #67e8f9;
+}
+
+@media (max-width: 700px) {
+  .container {
+    padding-top: 2.5rem;
+  }
+
+  .field-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
