@@ -4,6 +4,7 @@ from app import (
     analyze_url,
     compare_file_integrity,
     create_app,
+    generate_password,
 )
 
 
@@ -102,3 +103,25 @@ def test_password_analyzer_does_not_render_password():
     assert password.encode() not in response.data
     assert b"Forca estimada" not in response.data
     assert b"For\xc3\xa7a estimada" in response.data
+
+
+def test_generate_password_respects_length_and_character_groups():
+    password = generate_password(24)
+
+    assert len(password) == 24
+    assert any(character.islower() for character in password)
+    assert any(character.isupper() for character in password)
+    assert any(character.isdigit() for character in password)
+    assert any(character in "!#$%&()*+,-./:;<=>?@[\\]^_`{|}~" for character in password)
+
+
+def test_password_generator_rejects_invalid_length():
+    client = create_app().test_client()
+
+    response = client.post(
+        "/tools/password-generator",
+        data={"length": "4", "include_symbols": "on"},
+    )
+
+    assert response.status_code == 200
+    assert b"entre 8 e 128" in response.data

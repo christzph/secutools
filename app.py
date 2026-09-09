@@ -1,6 +1,8 @@
 from ipaddress import ip_address
 import hashlib
 import re
+import secrets
+import string
 from urllib.parse import urlparse
 
 from flask import Flask, render_template, request
@@ -133,6 +135,23 @@ def analyze_password(password: str) -> dict[str, object]:
     return {"strength": strength, "score": score, "findings": findings}
 
 
+def generate_password(
+    length: int, include_symbols: bool = True
+) -> str:
+    if length < 8 or length > 128:
+        raise ValueError("O comprimento deve estar entre 8 e 128 caracteres.")
+
+    groups = [string.ascii_lowercase, string.ascii_uppercase, string.digits]
+    if include_symbols:
+        groups.append(string.punctuation)
+
+    password = [secrets.choice(group) for group in groups]
+    alphabet = "".join(groups)
+    password.extend(secrets.choice(alphabet) for _ in range(length - len(password)))
+    secrets.SystemRandom().shuffle(password)
+    return "".join(password)
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
 
@@ -162,6 +181,12 @@ def create_app() -> Flask:
                 "description": "Avalie a força de uma senha sem armazená-la.",
                 "status": "Disponível",
                 "url": "/tools/password-analyzer",
+            },
+            {
+                "name": "Gerador de Senhas",
+                "description": "Gere senhas aleatórias com aleatoriedade segura.",
+                "status": "Disponível",
+                "url": "/tools/password-generator",
             },
         ]
         return render_template("index.html", tools=tools)
@@ -196,6 +221,27 @@ def create_app() -> Flask:
         if request.method == "POST":
             result = analyze_password(request.form.get("password", ""))
         return render_template("password_analyzer.html", result=result)
+
+    @app.route("/tools/password-generator", methods=["GET", "POST"])
+    def password_generator():
+        result = None
+        error = None
+        if request.method == "POST":
+            try:
+                length = int(request.form.get("length", "16"))
+            except ValueError:
+                error = "Informe um comprimento numérico."
+            else:
+                try:
+                    result = generate_password(
+                        length,
+                        request.form.get("include_symbols") == "on",
+                    )
+                except ValueError as exc:
+                    error = str(exc)
+        return render_template(
+            "password_generator.html", result=result, error=error
+        )
 
     return app
 

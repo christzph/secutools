@@ -101,6 +101,43 @@ p {
   max-width: 760px;
 }
 
+.password-form > input[type="number"] {
+  background: #141d33;
+  color: #e5e7eb;
+  display: block;
+  margin-bottom: 1rem;
+  width: 130px;
+}
+
+.checkbox-label {
+  align-items: center;
+  color: #a8b3c7;
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.form-error {
+  color: #fda4af;
+  font-weight: 700;
+  margin-top: 1.5rem;
+}
+
+.generated-password {
+  background: #0c1222;
+  border: 1px solid #3b4a70;
+  border-radius: 8px;
+  color: #67e8f9;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 1.2rem;
+  overflow-wrap: anywhere;
+  padding: 1rem;
+}
+
+.security-note {
+  margin-bottom: 0;
+}
+
 .content-grid {
   display: grid;
   gap: 1rem;
