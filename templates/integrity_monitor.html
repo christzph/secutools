@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Monitor de Integridade · SecuTools{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">ANÁLISE DEFENSIVA</p>
+  <h1>Monitor de Integridade</h1>
+  <p>Compare duas versões de um conteúdo usando hashes SHA-256, sem acessar arquivos externos.</p>
+</section>
+
+<form class="integrity-form" method="post">
+  <div class="content-grid">
+    <div>
+      <label for="original">Conteúdo original</label>
+      <textarea id="original" name="original" rows="10"
+                placeholder="Cole a versão original" required></textarea>
+    </div>
+    <div>
+      <label for="current">Conteúdo atual</label>
+      <textarea id="current" name="current" rows="10"
+                placeholder="Cole a versão atual" required></textarea>
+    </div>
+  </div>
+  <button class="submit-button" type="submit">Comparar integridade</button>
+</form>
+
+{% if result %}
+<section class="analysis-result" aria-live="polite">
+  <p class="eyebrow">RESULTADO</p>
+  <div class="metric-grid integrity-metrics">
+    <div class="metric metric-risk">
+      <span>Status</span>
+      <strong>{{ result.status }}</strong>
+    </div>
+    <div class="metric">
+      <span>Hash original</span>
+      <strong>{{ result.original_hash }}</strong>
+    </div>
+    <div class="metric">
+      <span>Hash atual</span>
+      <strong>{{ result.current_hash }}</strong>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

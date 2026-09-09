@@ -1,4 +1,4 @@
-from app import analyze_ssh_logs, analyze_url, create_app
+from app import analyze_ssh_logs, analyze_url, compare_file_integrity, create_app
 
 
 def test_analyze_url_flags_http_and_embedded_credentials():
@@ -56,3 +56,24 @@ def test_ssh_log_analyzer_renders_analysis_result():
     assert response.status_code == 200
     assert b">Risco<" in response.data
     assert b">Falhas<" in response.data
+
+
+def test_compare_file_integrity_detects_changes():
+    result = compare_file_integrity("versao original", "versao alterada")
+
+    assert result["changed"] is True
+    assert result["status"] == "Alterado"
+    assert result["original_hash"] != result["current_hash"]
+
+
+def test_integrity_monitor_renders_hashes():
+    client = create_app().test_client()
+
+    response = client.post(
+        "/tools/integrity-monitor",
+        data={"original": "config=ok", "current": "config=changed"},
+    )
+
+    assert response.status_code == 200
+    assert b">Status<" in response.data
+    assert b"Alterado" in response.data

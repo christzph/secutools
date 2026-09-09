@@ -1,4 +1,5 @@
 from ipaddress import ip_address
+import hashlib
 import re
 from urllib.parse import urlparse
 
@@ -87,6 +88,17 @@ def analyze_ssh_logs(log_text: str) -> dict[str, object]:
     }
 
 
+def compare_file_integrity(original: str, current: str) -> dict[str, object]:
+    original_hash = hashlib.sha256(original.encode("utf-8")).hexdigest()
+    current_hash = hashlib.sha256(current.encode("utf-8")).hexdigest()
+    return {
+        "original_hash": original_hash,
+        "current_hash": current_hash,
+        "changed": original_hash != current_hash,
+        "status": "Alterado" if original_hash != current_hash else "Íntegro",
+    }
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
 
@@ -108,7 +120,8 @@ def create_app() -> Flask:
             {
                 "name": "Monitor de Integridade",
                 "description": "Detecte alterações em arquivos monitorados.",
-                "status": "Em breve",
+                "status": "Disponível",
+                "url": "/tools/integrity-monitor",
             },
         ]
         return render_template("index.html", tools=tools)
@@ -126,6 +139,16 @@ def create_app() -> Flask:
         if request.method == "POST":
             result = analyze_ssh_logs(request.form.get("logs", ""))
         return render_template("ssh_log_analyzer.html", result=result)
+
+    @app.route("/tools/integrity-monitor", methods=["GET", "POST"])
+    def integrity_monitor():
+        result = None
+        if request.method == "POST":
+            result = compare_file_integrity(
+                request.form.get("original", ""),
+                request.form.get("current", ""),
+            )
+        return render_template("integrity_monitor.html", result=result)
 
     return app
 
