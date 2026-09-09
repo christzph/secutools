@@ -97,6 +97,10 @@ p {
   max-width: 1100px;
 }
 
+.password-form {
+  max-width: 760px;
+}
+
 .content-grid {
   display: grid;
   gap: 1rem;
@@ -233,6 +237,16 @@ button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.password-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.finding-list {
+  color: #a8b3c7;
+  line-height: 1.7;
+  margin-bottom: 0;
+}
+
 @media (max-width: 700px) {
   .container {
     padding-top: 2.5rem;
@@ -253,7 +267,8 @@ button {
   }
 
   .content-grid,
-  .integrity-metrics {
+  .integrity-metrics,
+  .password-metrics {
     grid-template-columns: 1fr;
   }
 }

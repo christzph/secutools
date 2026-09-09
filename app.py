@@ -99,6 +99,40 @@ def compare_file_integrity(original: str, current: str) -> dict[str, object]:
     }
 
 
+def analyze_password(password: str) -> dict[str, object]:
+    findings: list[str] = []
+    score = 0
+    common_passwords = {"123456", "password", "senha", "qwerty", "admin"}
+
+    if password.lower() in common_passwords:
+        findings.append("A senha está entre padrões muito comuns.")
+        score = 0
+    else:
+        if len(password) >= 12:
+            score += 2
+        elif len(password) >= 8:
+            score += 1
+        else:
+            findings.append("Use pelo menos 8 caracteres.")
+
+        character_groups = [
+            bool(re.search(r"[a-z]", password)),
+            bool(re.search(r"[A-Z]", password)),
+            bool(re.search(r"\d", password)),
+            bool(re.search(r"[^A-Za-z0-9]", password)),
+        ]
+        score += sum(character_groups)
+        if sum(character_groups) < 3:
+            findings.append("Combine letras maiúsculas, minúsculas, números e símbolos.")
+        if len(set(password.lower())) < max(4, len(password) // 3):
+            findings.append("Evite repetir excessivamente os mesmos caracteres.")
+
+    strength = "Fraca" if score <= 2 else "Moderada" if score <= 4 else "Forte"
+    if not findings:
+        findings.append("A senha atende aos critérios básicos de complexidade.")
+    return {"strength": strength, "score": score, "findings": findings}
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
 
@@ -122,6 +156,12 @@ def create_app() -> Flask:
                 "description": "Detecte alterações em arquivos monitorados.",
                 "status": "Disponível",
                 "url": "/tools/integrity-monitor",
+            },
+            {
+                "name": "Analisador de Senhas",
+                "description": "Avalie a força de uma senha sem armazená-la.",
+                "status": "Disponível",
+                "url": "/tools/password-analyzer",
             },
         ]
         return render_template("index.html", tools=tools)
@@ -149,6 +189,13 @@ def create_app() -> Flask:
                 request.form.get("current", ""),
             )
         return render_template("integrity_monitor.html", result=result)
+
+    @app.route("/tools/password-analyzer", methods=["GET", "POST"])
+    def password_analyzer():
+        result = None
+        if request.method == "POST":
+            result = analyze_password(request.form.get("password", ""))
+        return render_template("password_analyzer.html", result=result)
 
     return app
 

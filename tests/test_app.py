@@ -1,4 +1,10 @@
-from app import analyze_ssh_logs, analyze_url, compare_file_integrity, create_app
+from app import (
+    analyze_password,
+    analyze_ssh_logs,
+    analyze_url,
+    compare_file_integrity,
+    create_app,
+)
 
 
 def test_analyze_url_flags_http_and_embedded_credentials():
@@ -77,3 +83,22 @@ def test_integrity_monitor_renders_hashes():
     assert response.status_code == 200
     assert b">Status<" in response.data
     assert b"Alterado" in response.data
+
+
+def test_analyze_password_flags_common_password():
+    result = analyze_password("password")
+
+    assert result["strength"] == "Fraca"
+    assert "padrões muito comuns" in result["findings"][0]
+
+
+def test_password_analyzer_does_not_render_password():
+    client = create_app().test_client()
+    password = "Senha-Forte-2026!"
+
+    response = client.post("/tools/password-analyzer", data={"password": password})
+
+    assert response.status_code == 200
+    assert password.encode() not in response.data
+    assert b"Forca estimada" not in response.data
+    assert b"For\xc3\xa7a estimada" in response.data
