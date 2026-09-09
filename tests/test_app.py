@@ -1,4 +1,4 @@
-from app import analyze_url, create_app
+from app import analyze_ssh_logs, analyze_url, create_app
 
 
 def test_analyze_url_flags_http_and_embedded_credentials():
@@ -23,3 +23,34 @@ def test_url_analyzer_renders_analysis_result():
 
     assert response.status_code == 200
     assert b"Risco Baixo" in response.data
+
+
+def test_analyze_ssh_logs_counts_attempts_by_ip():
+    logs = "\n".join(
+        [
+            "Failed password for root from 192.0.2.10 port 22 ssh2",
+            "Failed password for invalid user admin from 192.0.2.10 port 22 ssh2",
+            "Failed password for root from 192.0.2.11 port 22 ssh2",
+        ]
+    )
+
+    result = analyze_ssh_logs(logs)
+
+    assert result["total_failures"] == 3
+    assert result["unique_ips"] == 2
+    assert result["top_attacker"] == "192.0.2.10"
+    assert result["top_attacker_attempts"] == 2
+
+
+def test_ssh_log_analyzer_renders_analysis_result():
+    client = create_app().test_client()
+
+    response = client.post(
+        "/tools/ssh-log-analyzer",
+        data={
+            "logs": "Failed password for root from 192.0.2.10 port 22 ssh2",
+        },
+    )
+
+    assert response.status_code == 200
+    assert b"Falhas de autentica" in response.data

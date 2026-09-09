@@ -1,13 +1,11 @@
-"""Ponto de entrada da aplicação SecuTools."""
-
 from ipaddress import ip_address
+import re
 from urllib.parse import urlparse
 
 from flask import Flask, render_template, request
 
 
 def analyze_url(value: str) -> dict[str, object]:
-    """Analisa sinais comuns de risco sem fazer uma requisição externa."""
     candidate = value.strip()
     parsed = urlparse(candidate)
     findings: list[str] = []
@@ -46,6 +44,37 @@ def analyze_url(value: str) -> dict[str, object]:
     return {"url": candidate, "risk": risk, "score": score, "findings": findings}
 
 
+def analyze_ssh_logs(log_text: str) -> dict[str, object]:
+    failures: list[dict[str, str]] = []
+    pattern = re.compile(
+        r"Failed password for (?:invalid user )?(?P<user>\S+) from "
+        r"(?P<ip>\S+)"
+    )
+
+    for line in log_text.splitlines():
+        match = pattern.search(line)
+        if match:
+            failures.append(
+                {"user": match.group("user"), "ip": match.group("ip")}
+            )
+
+    by_ip: dict[str, int] = {}
+    for failure in failures:
+        ip = failure["ip"]
+        by_ip[ip] = by_ip.get(ip, 0) + 1
+
+    top_attacker = max(by_ip, key=by_ip.get) if by_ip else None
+    total_failures = len(failures)
+    risk = "Baixo" if total_failures < 5 else "Moderado" if total_failures < 10 else "Alto"
+    return {
+        "total_failures": total_failures,
+        "unique_ips": len(by_ip),
+        "top_attacker": top_attacker,
+        "top_attacker_attempts": by_ip.get(top_attacker, 0) if top_attacker else 0,
+        "risk": risk,
+    }
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
 
@@ -61,7 +90,8 @@ def create_app() -> Flask:
             {
                 "name": "Analisador de Logs",
                 "description": "Identifique padrões de força bruta em logs SSH.",
-                "status": "Em breve",
+                "status": "Disponível",
+                "url": "/tools/ssh-log-analyzer",
             },
             {
                 "name": "Monitor de Integridade",
@@ -77,6 +107,13 @@ def create_app() -> Flask:
         if request.method == "POST":
             result = analyze_url(request.form.get("url", ""))
         return render_template("url_analyzer.html", result=result)
+
+    @app.route("/tools/ssh-log-analyzer", methods=["GET", "POST"])
+    def ssh_log_analyzer():
+        result = None
+        if request.method == "POST":
+            result = analyze_ssh_logs(request.form.get("logs", ""))
+        return render_template("ssh_log_analyzer.html", result=result)
 
     return app
 

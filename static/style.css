@@ -114,6 +114,17 @@ input {
   flex: 1;
 }
 
+textarea {
+  background: #141d33;
+  color: #e5e7eb;
+  display: block;
+  font: inherit;
+  margin-bottom: 0.75rem;
+  padding: 0.8rem 1rem;
+  resize: vertical;
+  width: 100%;
+}
+
 button {
   background: #67e8f9;
   color: #0c1222;

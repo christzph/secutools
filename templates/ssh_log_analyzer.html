@@ -1,0 +1,24 @@
+<section class="hero">
+  <p class="eyebrow">ANÁLISE DEFENSIVA</p>
+  <h1>Analisador de Logs SSH</h1>
+  <p>Cole um trecho de log local para identificar falhas de autenticação e possíveis tentativas de força bruta.</p>
+</section>
+
+<form class="url-form" method="post">
+  <label for="logs">Logs SSH</label>
+  <textarea id="logs" name="logs" rows="12"
+            placeholder="Cole aqui as linhas do auth.log" required></textarea>
+  <button type="submit">Analisar logs</button>
+</form>
+
+<section class="analysis-result" aria-live="polite">
+  <p class="eyebrow">RESULTADO</p>
+  <h2>Risco {{ result.risk }}</h2>
+  <ul>
+    <li>Falhas de autenticação: {{ result.total_failures }}</li>
+    <li>IPs de origem: {{ result.unique_ips }}</li>
+    <li>IP com mais tentativas: {{ result.top_attacker or "Nenhum identificado" }}</li>
+    <li>Tentativas do IP principal: {{ result.top_attacker_attempts }}</li>
+  </ul>
+</section>
+
