@@ -1,4 +1,5 @@
 from ipaddress import ip_address
+import base64
 import hashlib
 import re
 import secrets
@@ -152,6 +153,30 @@ def generate_password(
     return "".join(password)
 
 
+def extract_iocs(text: str) -> dict[str, list[str]]:
+    patterns = {
+        "ips": r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
+        "domains": r"\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b",
+        "urls": r"https?://[^\s<>'\"]+",
+        "emails": r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b",
+        "hashes": r"\b[a-fA-F0-9]{32}(?:[a-fA-F0-9]{8}|[a-fA-F0-9]{32})?\b",
+    }
+    results: dict[str, list[str]] = {}
+    for category, pattern in patterns.items():
+        matches = re.findall(pattern, text, flags=re.IGNORECASE)
+        results[category] = list(dict.fromkeys(matches))
+    return results
+
+
+def decode_base64(value: str) -> str:
+    compact_value = re.sub(r"\s+", "", value)
+    try:
+        decoded = base64.b64decode(compact_value, validate=True)
+        return decoded.decode("utf-8")
+    except (ValueError, UnicodeDecodeError) as exc:
+        raise ValueError("Informe um valor Base64 válido contendo texto UTF-8.") from exc
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
 
@@ -187,6 +212,18 @@ def create_app() -> Flask:
                 "description": "Gere senhas aleatórias com aleatoriedade segura.",
                 "status": "Disponível",
                 "url": "/tools/password-generator",
+            },
+            {
+                "name": "Extrator de IOCs",
+                "description": "Encontre IPs, domínios, URLs, e-mails e hashes.",
+                "status": "Disponível",
+                "url": "/tools/ioc-extractor",
+            },
+            {
+                "name": "Decodificador Base64",
+                "description": "Converta Base64 para texto localmente.",
+                "status": "Disponível",
+                "url": "/tools/base64-decoder",
             },
         ]
         return render_template("index.html", tools=tools)
@@ -241,6 +278,26 @@ def create_app() -> Flask:
                     error = str(exc)
         return render_template(
             "password_generator.html", result=result, error=error
+        )
+
+    @app.route("/tools/ioc-extractor", methods=["GET", "POST"])
+    def ioc_extractor():
+        result = None
+        if request.method == "POST":
+            result = extract_iocs(request.form.get("text", ""))
+        return render_template("ioc_extractor.html", result=result)
+
+    @app.route("/tools/base64-decoder", methods=["GET", "POST"])
+    def base64_decoder():
+        result = None
+        error = None
+        if request.method == "POST":
+            try:
+                result = decode_base64(request.form.get("value", ""))
+            except ValueError as exc:
+                error = str(exc)
+        return render_template(
+            "base64_decoder.html", result=result, error=error
         )
 
     return app

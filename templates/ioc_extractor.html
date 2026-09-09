@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Extrator de IOCs · SecuTools{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">ANÁLISE DEFENSIVA</p>
+  <h1>Extrator de IOCs</h1>
+  <p>Extraia indicadores de compromisso de textos e logs sem consultar serviços externos.</p>
+</section>
+
+<form class="log-form" method="post">
+  <div class="field-heading">
+    <label for="text">Texto para analisar</label>
+    <span>Logs, alertas ou relatórios</span>
+  </div>
+  <textarea id="text" name="text" rows="12"
+            placeholder="Cole um texto contendo IPs, domínios, URLs, e-mails ou hashes" required></textarea>
+  <button class="submit-button" type="submit">Extrair IOCs</button>
+</form>
+
+{% if result %}
+<section class="analysis-result" aria-live="polite">
+  <p class="eyebrow">INDICADORES ENCONTRADOS</p>
+  <div class="ioc-results">
+    {% for category, values in result.items() %}
+    <div class="ioc-group">
+      <h2>{{ category|capitalize }}</h2>
+      {% if values %}
+      <ul>{% for value in values %}<li><code>{{ value }}</code></li>{% endfor %}</ul>
+      {% else %}
+      <p>Nenhum indicador encontrado.</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

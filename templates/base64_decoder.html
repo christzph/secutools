@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Decodificador Base64 · SecuTools{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">ANÁLISE DEFENSIVA</p>
+  <h1>Decodificador Base64</h1>
+  <p>Converta uma sequência Base64 para texto UTF-8 sem enviar o conteúdo para serviços externos.</p>
+</section>
+
+<form class="log-form" method="post">
+  <label for="value">Valor Base64</label>
+  <textarea id="value" name="value" rows="8"
+            placeholder="SGVsbG8sIFNlY3VUb29scyE=" required></textarea>
+  <button class="submit-button" type="submit">Decodificar</button>
+</form>
+
+{% if error %}
+<p class="form-error" role="alert">{{ error }}</p>
+{% endif %}
+
+{% if result is not none %}
+<section class="analysis-result" aria-live="polite">
+  <p class="eyebrow">TEXTO DECODIFICADO</p>
+  <pre class="decoded-output">{{ result }}</pre>
+</section>
+{% endif %}
+{% endblock %}

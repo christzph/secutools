@@ -4,6 +4,8 @@ from app import (
     analyze_url,
     compare_file_integrity,
     create_app,
+    decode_base64,
+    extract_iocs,
     generate_password,
 )
 
@@ -125,3 +127,29 @@ def test_password_generator_rejects_invalid_length():
 
     assert response.status_code == 200
     assert b"entre 8 e 128" in response.data
+
+
+def test_extract_iocs_groups_unique_indicators():
+    result = extract_iocs(
+        "Conexão para https://malware.example.test/login de 203.0.113.10 "
+        "e contato soc@example.test. Hash "
+        "0123456789abcdef0123456789abcdef."
+    )
+
+    assert result["ips"] == ["203.0.113.10"]
+    assert result["urls"] == ["https://malware.example.test/login"]
+    assert result["emails"] == ["soc@example.test"]
+    assert result["hashes"] == ["0123456789abcdef0123456789abcdef"]
+
+
+def test_base64_decoder_returns_utf8_text():
+    assert decode_base64("U2VjdVRvb2xz") == "SecuTools"
+
+
+def test_base64_decoder_shows_invalid_input_error():
+    client = create_app().test_client()
+
+    response = client.post("/tools/base64-decoder", data={"value": "not-base64"})
+
+    assert response.status_code == 200
+    assert b"Base64 v\xc3\xa1lido" in response.data
