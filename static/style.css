@@ -324,6 +324,20 @@ button {
   margin-bottom: 0;
 }
 
+.email-form {
+  max-width: 600px;
+}
+
+.metric-card.valid {
+  background: linear-gradient(135deg, #065f46 0%, #0d4a38 100%);
+  border-color: #10b981;
+}
+
+.metric-card.invalid {
+  background: linear-gradient(135deg, #7f1d1d 0%, #5a1414 100%);
+  border-color: #ef4444;
+}
+
 @media (max-width: 700px) {
   .container {
     padding-top: 2.5rem;

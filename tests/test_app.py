@@ -7,6 +7,7 @@ from app import (
     decode_base64,
     extract_iocs,
     generate_password,
+    validate_email,
 )
 
 
@@ -153,3 +154,34 @@ def test_base64_decoder_shows_invalid_input_error():
 
     assert response.status_code == 200
     assert b"Base64 v\xc3\xa1lido" in response.data
+
+
+def test_validate_email_accepts_valid_format():
+    result = validate_email("user@example.com")
+
+    assert result["valid"] is True
+    assert result["status"] == "Válido"
+
+
+def test_validate_email_rejects_invalid_format():
+    result = validate_email("not-an-email")
+
+    assert result["valid"] is False
+    assert result["status"] == "Inválido"
+    assert "O formato não segue o padrão de e-mail válido." in result["findings"]
+
+
+def test_validate_email_detects_common_domains():
+    result = validate_email("user@gmail.com")
+
+    assert result["valid"] is True
+    assert any("comum" in finding for finding in result["findings"])
+
+
+def test_email_validator_renders_validation_result():
+    client = create_app().test_client()
+
+    response = client.post("/tools/email-validator", data={"email": "test@example.com"})
+
+    assert response.status_code == 200
+    assert b"V\xc3\xa1lido" in response.data

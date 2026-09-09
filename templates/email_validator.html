@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+        <h1>Validador de E-mail</h1>
+        <p class="tool-description">Valide endereços de e-mail com verificações de padrão, formato e domínios comuns.</p>
+
+        <form method="POST" class="email-form">
+            <label for="email">E-mail para validar:</label>
+            <input 
+                type="text" 
+                id="email" 
+                name="email" 
+                placeholder="exemplo@dominio.com.br" 
+                required
+            >
+            <button type="submit">Validar E-mail</button>
+        </form>
+
+        {% if result %}
+            <div class="result-container">
+                <div class="metric-grid">
+                    <div class="metric-card {% if result.valid %}valid{% else %}invalid{% endif %}">
+                        <span class="metric-label">Status</span>
+                        <span class="metric-value">{{ result.status }}</span>
+                    </div>
+                </div>
+
+                {% if result.findings %}
+                    <div class="findings-section">
+                        <h2>Detalhes</h2>
+                        <ul>
+                            {% for finding in result.findings %}
+                                <li>{{ finding }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

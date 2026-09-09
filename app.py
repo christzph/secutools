@@ -177,6 +177,45 @@ def decode_base64(value: str) -> str:
         raise ValueError("Informe um valor Base64 válido contendo texto UTF-8.") from exc
 
 
+def validate_email(email: str) -> dict[str, object]:
+    """Valida um endereço de e-mail com verificações de padrão e segurança."""
+    email = email.strip().lower()
+    findings: list[str] = []
+    score = 0
+    valid = True
+
+    pattern = r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+    if not re.match(pattern, email):
+        findings.append("O formato não segue o padrão de e-mail válido.")
+        valid = False
+    else:
+        score += 1
+        local, domain = email.rsplit("@", 1)
+
+        if len(local) > 64:
+            findings.append("A parte antes do @ excede 64 caracteres.")
+        elif len(local) < 1:
+            findings.append("A parte local está vazia.")
+        else:
+            score += 1
+
+        if ".." in email:
+            findings.append("Contém pontos consecutivos (padrão inválido).")
+        if email.startswith(".") or email.startswith("@"):
+            findings.append("Começa com caractere inválido.")
+        if email.endswith("."):
+            findings.append("Termina com ponto.")
+
+        common_domains = {"gmail.com", "hotmail.com", "outlook.com", "yahoo.com"}
+        if domain in common_domains:
+            findings.append(f"Domínio '{domain}' é comum; verifique se é esperado em seu contexto.")
+
+    status = "Válido" if valid and score >= 2 else "Inválido"
+    if not findings:
+        findings.append("O e-mail atende aos critérios básicos de validação.")
+    return {"status": status, "findings": findings, "valid": valid}
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
 
@@ -224,6 +263,12 @@ def create_app() -> Flask:
                 "description": "Converta Base64 para texto localmente.",
                 "status": "Disponível",
                 "url": "/tools/base64-decoder",
+            },
+            {
+                "name": "Validador de Email",
+                "description": "Valide e-mails com verificações de padrão e segurança.",
+                "status": "Disponível",
+                "url": "/tools/email-validator",
             },
         ]
         return render_template("index.html", tools=tools)
@@ -299,6 +344,13 @@ def create_app() -> Flask:
         return render_template(
             "base64_decoder.html", result=result, error=error
         )
+
+    @app.route("/tools/email-validator", methods=["GET", "POST"])
+    def email_validator():
+        result = None
+        if request.method == "POST":
+            result = validate_email(request.form.get("email", ""))
+        return render_template("email_validator.html", result=result)
 
     return app
 
