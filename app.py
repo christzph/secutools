@@ -219,74 +219,77 @@ def validate_email(email: str) -> dict[str, object]:
 def create_app() -> Flask:
     app = Flask(__name__)
 
+    # Lista de ferramentas disponíveis
+    tools = [
+        {
+            "name": "Analisador de URLs",
+            "description": "Identifique sinais básicos de risco em links.",
+            "status": "Disponível",
+            "url": "/tools/url-analyzer",
+        },
+        {
+            "name": "Analisador de Logs",
+            "description": "Identifique padrões de força bruta em logs SSH.",
+            "status": "Disponível",
+            "url": "/tools/ssh-log-analyzer",
+        },
+        {
+            "name": "Monitor de Integridade",
+            "description": "Detecte alterações em arquivos monitorados.",
+            "status": "Disponível",
+            "url": "/tools/integrity-monitor",
+        },
+        {
+            "name": "Analisador de Senhas",
+            "description": "Avalie a força de uma senha sem armazená-la.",
+            "status": "Disponível",
+            "url": "/tools/password-analyzer",
+        },
+        {
+            "name": "Gerador de Senhas",
+            "description": "Gere senhas aleatórias com aleatoriedade segura.",
+            "status": "Disponível",
+            "url": "/tools/password-generator",
+        },
+        {
+            "name": "Extrator de IOCs",
+            "description": "Encontre IPs, domínios, URLs, e-mails e hashes.",
+            "status": "Disponível",
+            "url": "/tools/ioc-extractor",
+        },
+        {
+            "name": "Decodificador Base64",
+            "description": "Converta Base64 para texto localmente.",
+            "status": "Disponível",
+            "url": "/tools/base64-decoder",
+        },
+        {
+            "name": "Validador de Email",
+            "description": "Valide e-mails com verificações de padrão e segurança.",
+            "status": "Disponível",
+            "url": "/tools/email-validator",
+        },
+    ]
+
     @app.get("/")
     def index():
-        tools = [
-            {
-                "name": "Analisador de URLs",
-                "description": "Identifique sinais básicos de risco em links.",
-                "status": "Disponível",
-                "url": "/tools/url-analyzer",
-            },
-            {
-                "name": "Analisador de Logs",
-                "description": "Identifique padrões de força bruta em logs SSH.",
-                "status": "Disponível",
-                "url": "/tools/ssh-log-analyzer",
-            },
-            {
-                "name": "Monitor de Integridade",
-                "description": "Detecte alterações em arquivos monitorados.",
-                "status": "Disponível",
-                "url": "/tools/integrity-monitor",
-            },
-            {
-                "name": "Analisador de Senhas",
-                "description": "Avalie a força de uma senha sem armazená-la.",
-                "status": "Disponível",
-                "url": "/tools/password-analyzer",
-            },
-            {
-                "name": "Gerador de Senhas",
-                "description": "Gere senhas aleatórias com aleatoriedade segura.",
-                "status": "Disponível",
-                "url": "/tools/password-generator",
-            },
-            {
-                "name": "Extrator de IOCs",
-                "description": "Encontre IPs, domínios, URLs, e-mails e hashes.",
-                "status": "Disponível",
-                "url": "/tools/ioc-extractor",
-            },
-            {
-                "name": "Decodificador Base64",
-                "description": "Converta Base64 para texto localmente.",
-                "status": "Disponível",
-                "url": "/tools/base64-decoder",
-            },
-            {
-                "name": "Validador de Email",
-                "description": "Valide e-mails com verificações de padrão e segurança.",
-                "status": "Disponível",
-                "url": "/tools/email-validator",
-            },
-        ]
-        return render_template("index.html", tools=tools)
+        return render_template("index.html", tools=tools, show_tools_menu=False)
 
     @app.route("/tools/url-analyzer", methods=["GET", "POST"])
     def url_analyzer():
         result = None
         if request.method == "POST":
             result = analyze_url(request.form.get("url", ""))
-        return render_template("url_analyzer.html", result=result)
+        return render_template("url_analyzer.html", result=result, tools=tools, show_tools_menu=True)
 
     @app.route("/tools/ssh-log-analyzer", methods=["GET", "POST"])
     def ssh_log_analyzer():
         result = None
         if request.method == "POST":
             result = analyze_ssh_logs(request.form.get("logs", ""))
-        return render_template("ssh_log_analyzer.html", result=result)
+        return render_template("ssh_log_analyzer.html", result=result, tools=tools, show_tools_menu=True)
 
+    @app.route("/tools/integrity-monitor", methods=["GET", "POST"])
     @app.route("/tools/integrity-monitor", methods=["GET", "POST"])
     def integrity_monitor():
         result = None
@@ -295,14 +298,14 @@ def create_app() -> Flask:
                 request.form.get("original", ""),
                 request.form.get("current", ""),
             )
-        return render_template("integrity_monitor.html", result=result)
+        return render_template("integrity_monitor.html", result=result, tools=tools, show_tools_menu=True)
 
     @app.route("/tools/password-analyzer", methods=["GET", "POST"])
     def password_analyzer():
         result = None
         if request.method == "POST":
             result = analyze_password(request.form.get("password", ""))
-        return render_template("password_analyzer.html", result=result)
+        return render_template("password_analyzer.html", result=result, tools=tools, show_tools_menu=True)
 
     @app.route("/tools/password-generator", methods=["GET", "POST"])
     def password_generator():
@@ -322,7 +325,7 @@ def create_app() -> Flask:
                 except ValueError as exc:
                     error = str(exc)
         return render_template(
-            "password_generator.html", result=result, error=error
+            "password_generator.html", result=result, error=error, tools=tools, show_tools_menu=True
         )
 
     @app.route("/tools/ioc-extractor", methods=["GET", "POST"])
@@ -330,7 +333,7 @@ def create_app() -> Flask:
         result = None
         if request.method == "POST":
             result = extract_iocs(request.form.get("text", ""))
-        return render_template("ioc_extractor.html", result=result)
+        return render_template("ioc_extractor.html", result=result, tools=tools, show_tools_menu=True)
 
     @app.route("/tools/base64-decoder", methods=["GET", "POST"])
     def base64_decoder():
@@ -342,7 +345,7 @@ def create_app() -> Flask:
             except ValueError as exc:
                 error = str(exc)
         return render_template(
-            "base64_decoder.html", result=result, error=error
+            "base64_decoder.html", result=result, error=error, tools=tools, show_tools_menu=True
         )
 
     @app.route("/tools/email-validator", methods=["GET", "POST"])
@@ -350,7 +353,7 @@ def create_app() -> Flask:
         result = None
         if request.method == "POST":
             result = validate_email(request.form.get("email", ""))
-        return render_template("email_validator.html", result=result)
+        return render_template("email_validator.html", result=result, tools=tools, show_tools_menu=True)
 
     return app
 

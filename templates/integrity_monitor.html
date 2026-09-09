@@ -1,45 +1,63 @@
 {% extends "base.html" %}
-{% block title %}Monitor de Integridade · SecuTools{% endblock %}
+
 {% block content %}
-<section class="hero">
-  <p class="eyebrow">ANÁLISE DEFENSIVA</p>
-  <h1>Monitor de Integridade</h1>
-  <p>Compare duas versões de um conteúdo usando hashes SHA-256, sem acessar arquivos externos.</p>
+<section class="hero" aria-label="Seção de monitoramento de integridade">
+  <div class="hero__content">
+    <span class="hero__badge">ANÁLISE DEFENSIVA</span>
+    <h1 class="hero__title">Monitor de Integridade</h1>
+    <p class="hero__subtitle">Compare duas versões de um conteúdo usando hashes SHA-256, sem acessar arquivos externos.</p>
+  </div>
 </section>
 
-<form class="integrity-form" method="post">
-  <div class="content-grid">
-    <div>
-      <label for="original">Conteúdo original</label>
-      <textarea id="original" name="original" rows="10"
-                placeholder="Cole a versão original" required></textarea>
+<form class="integrity-form" method="POST" aria-label="Formulário de comparação de integridade">
+  <div class="form__grid">
+    <div class="form__group">
+      <label for="original" class="form__label">Conteúdo Original</label>
+      <textarea 
+        id="original"
+        name="original"
+        rows="10"
+        class="form__textarea"
+        placeholder="Cole a versão original"
+        required
+      ></textarea>
     </div>
-    <div>
-      <label for="current">Conteúdo atual</label>
-      <textarea id="current" name="current" rows="10"
-                placeholder="Cole a versão atual" required></textarea>
+    <div class="form__group">
+      <label for="current" class="form__label">Conteúdo Atual</label>
+      <textarea 
+        id="current"
+        name="current"
+        rows="10"
+        class="form__textarea"
+        placeholder="Cole a versão atual"
+        required
+      ></textarea>
     </div>
   </div>
-  <button class="submit-button" type="submit">Comparar integridade</button>
+  <button type="submit" class="button button--primary">Comparar Integridade</button>
 </form>
 
 {% if result %}
-<section class="analysis-result" aria-live="polite">
-  <p class="eyebrow">RESULTADO</p>
-  <div class="metric-grid integrity-metrics">
-    <div class="metric metric-risk">
-      <span>Status</span>
-      <strong>{{ result.status }}</strong>
+<section class="result-section" aria-live="polite" aria-label="Resultado da comparação">
+  <div class="result__header">
+    <span class="result__badge">RESULTADO</span>
+  </div>
+  
+  <div class="metrics-grid">
+    <div class="metric-card metric-card--{{ 'intacto' if 'Íntegro' in result.status else 'alterado' }}">
+      <span class="metric-card__label">Status</span>
+      <strong class="metric-card__value">{{ result.status }}</strong>
     </div>
-    <div class="metric">
-      <span>Hash original</span>
-      <strong>{{ result.original_hash }}</strong>
+    <div class="metric-card">
+      <span class="metric-card__label">Hash Original</span>
+      <code class="metric-card__monospace">{{ result.original_hash }}</code>
     </div>
-    <div class="metric">
-      <span>Hash atual</span>
-      <strong>{{ result.current_hash }}</strong>
+    <div class="metric-card">
+      <span class="metric-card__label">Hash Atual</span>
+      <code class="metric-card__monospace">{{ result.current_hash }}</code>
     </div>
   </div>
 </section>
 {% endif %}
 {% endblock %}
+

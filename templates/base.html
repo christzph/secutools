@@ -1,16 +1,83 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SecuTools - Toolkit de Segurança da Informação para Operações de Segurança">
+  <meta name="theme-color" content="#0c1222">
   <title>{% block title %}SecuTools{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="{{ url_for('index') }}">SecuTools</a>
-    <span>Security Operations Toolkit</span>
+  <header class="header">
+    <nav class="navbar">
+      <a href="{{ url_for('index') }}" class="navbar__brand">
+        <span class="navbar__title">SecuTools</span>
+      </a>
+      
+      <!-- Mostrar menu de navegação apenas dentro dos módulos -->
+      {% if show_tools_menu %}
+      <button class="navbar__menu-toggle" aria-label="Abrir menu de ferramentas" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      
+      <div class="navbar__menu">
+        <a href="{{ url_for('index') }}" class="navbar__menu-item navbar__menu-item--home">
+          <span class="navbar__menu-icon">🏠</span> Início
+        </a>
+        <div class="navbar__divider"></div>
+        <div class="navbar__menu-title">Ferramentas</div>
+        {% for tool in tools %}
+        <a href="{{ tool.url }}" class="navbar__menu-item">
+          {{ tool.name }}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </nav>
   </header>
-  <main class="container">{% block content %}{% endblock %}</main>
+  
+  <main class="main-content">
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+  
+  <footer class="footer">
+    <p>&copy; 2024 SecuTools. Análise de segurança local, sem envio de dados.</p>
+  </footer>
+
+  <script>
+    const menuToggle = document.querySelector('.navbar__menu-toggle');
+    const menu = document.querySelector('.navbar__menu');
+    
+    if (menuToggle) {
+      menuToggle.addEventListener('click', function() {
+        const isExpanded = this.getAttribute('aria-expanded') === 'true';
+        this.setAttribute('aria-expanded', !isExpanded);
+        menu.classList.toggle('navbar__menu--open');
+      });
+      
+      // Fechar menu ao clicar em um link
+      document.querySelectorAll('.navbar__menu-item').forEach(item => {
+        item.addEventListener('click', function() {
+          menuToggle.setAttribute('aria-expanded', 'false');
+          menu.classList.remove('navbar__menu--open');
+        });
+      });
+      
+      // Fechar menu ao clicar fora
+      document.addEventListener('click', function(event) {
+        if (!event.target.closest('.navbar')) {
+          menuToggle.setAttribute('aria-expanded', 'false');
+          menu.classList.remove('navbar__menu--open');
+        }
+      });
+    }
+  </script>
 </body>
 </html>
+
+

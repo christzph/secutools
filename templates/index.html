@@ -1,19 +1,29 @@
 {% extends "base.html" %}
+
 {% block content %}
-<section class="hero">
-  <p class="eyebrow">BLUE TEAM · SOC · GRC</p>
-  <h1>Ferramentas de segurança em um só lugar.</h1>
-  <p>Uma plataforma modular para análise, resposta a incidentes e automação.</p>
+<section class="hero" aria-label="Seção de boas-vindas">
+  <div class="hero__content">
+    <span class="hero__badge">BLUE TEAM · SOC · GRC</span>
+    <h1 class="hero__title">Ferramentas de Segurança em Um Só Lugar</h1>
+    <p class="hero__subtitle">Uma plataforma modular para análise, resposta a incidentes e automação. Todas as análises ocorrem localmente, sem envio de dados.</p>
+  </div>
 </section>
 
-<section class="tool-grid" aria-label="Ferramentas disponíveis">
-  {% for tool in tools %}
-  <article class="tool-card">
-    <span class="status">{{ tool.status }}</span>
-    <h2>{{ tool.name }}</h2>
-    <p>{{ tool.description }}</p>
-    {% if tool.url %}<a class="tool-link" href="{{ tool.url }}">Abrir ferramenta</a>{% endif %}
-  </article>
-  {% endfor %}
+<section class="tools-section" aria-label="Ferramentas disponíveis">
+  <div class="tools-grid">
+    {% for tool in tools %}
+    <article class="tool-card">
+      <div class="tool-card__header">
+        <span class="tool-card__status">{{ tool.status }}</span>
+        <h2 class="tool-card__title">{{ tool.name }}</h2>
+      </div>
+      <p class="tool-card__description">{{ tool.description }}</p>
+      {% if tool.url %}
+      <a href="{{ tool.url }}" class="tool-card__link" role="button">Abrir ferramenta</a>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
 </section>
 {% endblock %}
+

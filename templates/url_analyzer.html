@@ -1,28 +1,50 @@
 {% extends "base.html" %}
-{% block title %}Analisador de URLs · SecuTools{% endblock %}
+
 {% block content %}
-<section class="hero">
-  <p class="eyebrow">ANÁLISE DEFENSIVA</p>
-  <h1>Analisador de URLs</h1>
-  <p>Inspecione a estrutura de um link sem acessá-lo. A análise é local e não consulta o destino.</p>
+<section class="hero" aria-label="Seção de análise de URL">
+  <div class="hero__content">
+    <span class="hero__badge">ANÁLISE DEFENSIVA</span>
+    <h1 class="hero__title">Analisador de URLs</h1>
+    <p class="hero__subtitle">Inspecione a estrutura de um link sem acessá-lo. A análise é local e não consulta o destino.</p>
+  </div>
 </section>
 
-<form class="url-form" method="post">
-  <label for="url">URL para analisar</label>
-  <div class="form-row">
-    <input id="url" name="url" type="text" value="{{ result.url if result else '' }}"
-           placeholder="https://exemplo.com/login" required>
-    <button type="submit">Analisar</button>
+<form class="analysis-form" method="POST" aria-label="Formulário de análise de URL">
+  <div class="form__group">
+    <label for="url" class="form__label">URL para analisar:</label>
+    <div class="form__input-group">
+      <input 
+        id="url"
+        name="url"
+        type="text"
+        class="form__input"
+        value="{{ result.url if result else '' }}"
+        placeholder="https://exemplo.com/login"
+        required
+      />
+      <button type="submit" class="button button--primary">Analisar</button>
+    </div>
   </div>
 </form>
 
 {% if result %}
-<section class="analysis-result" aria-live="polite">
-  <p class="eyebrow">RESULTADO</p>
-  <h2>Risco {{ result.risk }}</h2>
-  <ul>
-    {% for finding in result.findings %}<li>{{ finding }}</li>{% endfor %}
-  </ul>
+<section class="result-section" aria-live="polite" aria-label="Resultado da análise">
+  <div class="result__header">
+    <span class="result__badge">RESULTADO</span>
+    <h2 class="result__title">Risco: <span class="result__risk result__risk--{{ result.risk|lower }}">{{ result.risk }}</span></h2>
+  </div>
+  
+  {% if result.findings %}
+  <div class="findings-block">
+    <h3 class="findings-block__title">Detalhes Identificados</h3>
+    <ul class="findings-list">
+      {% for finding in result.findings %}
+      <li class="findings-list__item">{{ finding }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
 </section>
 {% endif %}
 {% endblock %}
+

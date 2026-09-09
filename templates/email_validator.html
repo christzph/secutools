@@ -1,42 +1,53 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="container">
-        <h1>Validador de E-mail</h1>
-        <p class="tool-description">Valide endereços de e-mail com verificações de padrão, formato e domínios comuns.</p>
+<section class="hero" aria-label="Seção de validação de e-mail">
+  <div class="hero__content">
+    <span class="hero__badge">ANÁLISE DEFENSIVA</span>
+    <h1 class="hero__title">Validador de E-mail</h1>
+    <p class="hero__subtitle">Valide endereços de e-mail com verificações de padrão, formato e domínios comuns.</p>
+  </div>
+</section>
 
-        <form method="POST" class="email-form">
-            <label for="email">E-mail para validar:</label>
-            <input 
-                type="text" 
-                id="email" 
-                name="email" 
-                placeholder="exemplo@dominio.com.br" 
-                required
-            >
-            <button type="submit">Validar E-mail</button>
-        </form>
+<form class="email-form" method="POST" aria-label="Formulário de validação de e-mail">
+  <div class="form__group">
+    <label for="email" class="form__label">E-mail para Validar:</label>
+    <input 
+      id="email"
+      name="email"
+      type="email"
+      class="form__input"
+      placeholder="exemplo@dominio.com.br"
+      required
+    />
+  </div>
+  <button type="submit" class="button button--primary">Validar E-mail</button>
+</form>
 
-        {% if result %}
-            <div class="result-container">
-                <div class="metric-grid">
-                    <div class="metric-card {% if result.valid %}valid{% else %}invalid{% endif %}">
-                        <span class="metric-label">Status</span>
-                        <span class="metric-value">{{ result.status }}</span>
-                    </div>
-                </div>
-
-                {% if result.findings %}
-                    <div class="findings-section">
-                        <h2>Detalhes</h2>
-                        <ul>
-                            {% for finding in result.findings %}
-                                <li>{{ finding }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% endif %}
-            </div>
-        {% endif %}
+{% if result %}
+<section class="result-section" aria-live="polite" aria-label="Resultado da validação">
+  <div class="result__header">
+    <span class="result__badge">RESULTADO DA VALIDAÇÃO</span>
+  </div>
+  
+  <div class="metrics-grid">
+    <div class="metric-card metric-card--{% if result.valid %}valido{% else %}invalido{% endif %}">
+      <span class="metric-card__label">Status</span>
+      <strong class="metric-card__value">{{ result.status }}</strong>
     </div>
+  </div>
+
+  {% if result.findings %}
+  <div class="findings-block">
+    <h2 class="findings-block__title">Detalhes</h2>
+    <ul class="findings-list">
+      {% for finding in result.findings %}
+      <li class="findings-list__item">{{ finding }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
 {% endblock %}
+

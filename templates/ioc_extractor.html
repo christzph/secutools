@@ -1,33 +1,52 @@
 {% extends "base.html" %}
-{% block title %}Extrator de IOCs · SecuTools{% endblock %}
+
 {% block content %}
-<section class="hero">
-  <p class="eyebrow">ANÁLISE DEFENSIVA</p>
-  <h1>Extrator de IOCs</h1>
-  <p>Extraia indicadores de compromisso de textos e logs sem consultar serviços externos.</p>
+<section class="hero" aria-label="Seção de extração de IOCs">
+  <div class="hero__content">
+    <span class="hero__badge">ANÁLISE DEFENSIVA</span>
+    <h1 class="hero__title">Extrator de IOCs</h1>
+    <p class="hero__subtitle">Extraia indicadores de compromisso de textos e logs sem consultar serviços externos.</p>
+  </div>
 </section>
 
-<form class="log-form" method="post">
-  <div class="field-heading">
-    <label for="text">Texto para analisar</label>
-    <span>Logs, alertas ou relatórios</span>
+<form class="log-form" method="POST" aria-label="Formulário de extração de IOCs">
+  <div class="form__group">
+    <div class="form__label-wrapper">
+      <label for="text" class="form__label">Texto para Analisar</label>
+      <span class="form__hint">Logs, alertas ou relatórios</span>
+    </div>
+    <textarea 
+      id="text"
+      name="text"
+      rows="12"
+      class="form__textarea"
+      placeholder="Cole um texto contendo IPs, domínios, URLs, e-mails ou hashes"
+      required
+    ></textarea>
   </div>
-  <textarea id="text" name="text" rows="12"
-            placeholder="Cole um texto contendo IPs, domínios, URLs, e-mails ou hashes" required></textarea>
-  <button class="submit-button" type="submit">Extrair IOCs</button>
+  <button type="submit" class="button button--primary">Extrair IOCs</button>
 </form>
 
 {% if result %}
-<section class="analysis-result" aria-live="polite">
-  <p class="eyebrow">INDICADORES ENCONTRADOS</p>
+<section class="result-section" aria-live="polite" aria-label="Indicadores encontrados">
+  <div class="result__header">
+    <span class="result__badge">INDICADORES ENCONTRADOS</span>
+  </div>
+  
   <div class="ioc-results">
     {% for category, values in result.items() %}
     <div class="ioc-group">
-      <h2>{{ category|capitalize }}</h2>
+      <h2 class="ioc-group__title">{{ category|capitalize }}</h2>
       {% if values %}
-      <ul>{% for value in values %}<li><code>{{ value }}</code></li>{% endfor %}</ul>
+      <ul class="ioc-list">
+        {% for value in values %}
+        <li class="ioc-list__item">
+          <code class="ioc-value">{{ value }}</code>
+        </li>
+        {% endfor %}
+      </ul>
       {% else %}
-      <p>Nenhum indicador encontrado.</p>
+      <p class="ioc-empty">Nenhum indicador encontrado.</p>
       {% endif %}
     </div>
     {% endfor %}
@@ -35,3 +54,4 @@
 </section>
 {% endif %}
 {% endblock %}
+

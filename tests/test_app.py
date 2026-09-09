@@ -32,7 +32,8 @@ def test_url_analyzer_renders_analysis_result():
     response = client.post("/tools/url-analyzer", data={"url": "https://example.com"})
 
     assert response.status_code == 200
-    assert b"Risco Baixo" in response.data
+    assert b"Baixo" in response.data
+    assert b"RESULTADO" in response.data
 
 
 def test_analyze_ssh_logs_counts_attempts_by_ip():
@@ -104,8 +105,8 @@ def test_password_analyzer_does_not_render_password():
 
     assert response.status_code == 200
     assert password.encode() not in response.data
-    assert b"Forca estimada" not in response.data
-    assert b"For\xc3\xa7a estimada" in response.data
+    assert b"For\xc3\xa7a Estimada" in response.data
+    assert b"Forte" in response.data
 
 
 def test_generate_password_respects_length_and_character_groups():
