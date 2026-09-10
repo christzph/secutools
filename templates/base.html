@@ -9,35 +9,31 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+  {% if show_tools_menu %}
   <header class="header">
-    <nav class="navbar">
+    <nav class="navbar" aria-label="Navegação do projeto">
       <a href="{{ url_for('index') }}" class="navbar__brand">
         <span class="navbar__title">SecuTools</span>
       </a>
       
-      <!-- Mostrar menu de navegação apenas dentro dos módulos -->
-      {% if show_tools_menu %}
-      <button class="navbar__menu-toggle" aria-label="Abrir menu de ferramentas" aria-expanded="false">
+      <button type="button" class="navbar__menu-toggle" aria-label="Abrir menu de ferramentas" aria-expanded="false" aria-controls="tools-menu">
         <span></span>
         <span></span>
         <span></span>
       </button>
       
-      <div class="navbar__menu">
-        <a href="{{ url_for('index') }}" class="navbar__menu-item navbar__menu-item--home">
-          <span class="navbar__menu-icon">🏠</span> Início
-        </a>
-        <div class="navbar__divider"></div>
-        <div class="navbar__menu-title">Ferramentas</div>
+      <div class="navbar__menu" id="tools-menu">
         {% for tool in tools %}
-        <a href="{{ tool.url }}" class="navbar__menu-item">
-          {{ tool.name }}
+        {% if tool.url %}
+        <a href="{{ tool.url }}" class="navbar__menu-item" aria-label="{{ tool.name }}" title="{{ tool.name }}"{% if request.path == tool.url %} aria-current="page"{% endif %}>
+          <span class="navbar__item-viewport"><span class="navbar__item-label">{{ tool.name }}</span></span>
         </a>
+        {% endif %}
         {% endfor %}
       </div>
-      {% endif %}
     </nav>
   </header>
+  {% endif %}
   
   <main class="main-content">
     <div class="container">
@@ -49,35 +45,56 @@
     <p>&copy; 2024 SecuTools. Análise de segurança local, sem envio de dados.</p>
   </footer>
 
+  {% if show_tools_menu %}
+  <script src="{{ url_for('static', filename='navbar.js') }}" defer></script>
   <script>
     const menuToggle = document.querySelector('.navbar__menu-toggle');
     const menu = document.querySelector('.navbar__menu');
     
     if (menuToggle) {
+      function setMenuOpen(isOpen) {
+        menuToggle.setAttribute('aria-expanded', String(isOpen));
+        menuToggle.setAttribute('aria-label', isOpen ? 'Fechar menu de ferramentas' : 'Abrir menu de ferramentas');
+        menu.classList.toggle('navbar__menu--open', isOpen);
+      }
+
       menuToggle.addEventListener('click', function() {
         const isExpanded = this.getAttribute('aria-expanded') === 'true';
-        this.setAttribute('aria-expanded', !isExpanded);
-        menu.classList.toggle('navbar__menu--open');
+        setMenuOpen(!isExpanded);
       });
       
       // Fechar menu ao clicar em um link
       document.querySelectorAll('.navbar__menu-item').forEach(item => {
         item.addEventListener('click', function() {
-          menuToggle.setAttribute('aria-expanded', 'false');
-          menu.classList.remove('navbar__menu--open');
+          setMenuOpen(false);
         });
       });
       
       // Fechar menu ao clicar fora
       document.addEventListener('click', function(event) {
         if (!event.target.closest('.navbar')) {
-          menuToggle.setAttribute('aria-expanded', 'false');
-          menu.classList.remove('navbar__menu--open');
+          setMenuOpen(false);
         }
+      });
+
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && menuToggle.getAttribute('aria-expanded') === 'true') {
+          setMenuOpen(false);
+          menuToggle.focus();
+        }
+      });
+
+      document.addEventListener('focusin', function(event) {
+        if (!event.target.closest('.navbar')) {
+          setMenuOpen(false);
+        }
+      });
+
+      window.matchMedia('(max-width: 1024px)').addEventListener('change', function() {
+        setMenuOpen(false);
       });
     }
   </script>
+  {% endif %}
 </body>
 </html>
-
-
