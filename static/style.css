@@ -179,6 +179,7 @@ pre code {
 }
 
 .navbar__menu-toggle {
+  position: relative;
   display: none;
   background: none;
   border: none;
@@ -191,22 +192,38 @@ pre code {
 .navbar__menu-toggle span {
   display: block;
   width: 24px;
-  height: 2px;
+  height: 4px;
   background-color: var(--accent-primary);
-  transition: all var(--transition-fast);
-  border-radius: var(--radius-sm);
+  transition: opacity var(--transition-base);
+  border-radius: 999px;
 }
 
-.navbar__menu-toggle[aria-expanded="true"] span:nth-child(1) {
-  transform: rotate(45deg) translate(8px, 8px);
+.navbar__menu-toggle::after {
+  content: "×";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--accent-primary);
+  color: var(--bg-primary);
+  font-size: 24px;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: opacity var(--transition-base);
 }
 
-.navbar__menu-toggle[aria-expanded="true"] span:nth-child(2) {
+.navbar__menu-toggle[aria-expanded="true"] span {
   opacity: 0;
 }
 
-.navbar__menu-toggle[aria-expanded="true"] span:nth-child(3) {
-  transform: rotate(-45deg) translate(7px, -7px);
+.navbar__menu-toggle[aria-expanded="true"]::after {
+  opacity: 1;
 }
 
 .navbar__menu {
@@ -287,6 +304,8 @@ pre code {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .navbar__menu-toggle span,
+  .navbar__menu-toggle::after,
   .navbar__menu--compact .navbar__menu-item {
     transition: none;
   }
