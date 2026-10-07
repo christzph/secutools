@@ -1,241 +1,313 @@
-from ipaddress import ip_address
 import base64
 import hashlib
 import re
 import secrets
 import string
+from ipaddress import ip_address
 from urllib.parse import urlparse
 
 from flask import Flask, render_template, request
 
 
-def analyze_url(value: str) -> dict[str, object]:
-    candidate = value.strip()
-    parsed = urlparse(candidate)
-    findings: list[str] = []
-    score = 0
+def analyze_url(valor: str) -> dict[str, object]:
+    url_informada = valor.strip()
+    partes_url = urlparse(url_informada)
+    observacoes = []
+    pontuacao = 0
 
-    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
-        return {"url": candidate, "risk": "Inválida", "score": 0, "findings": ["Informe uma URL HTTP ou HTTPS válida."]}
+    if partes_url.scheme not in {"http", "https"} or not partes_url.hostname:
+        return {
+            "url": url_informada,
+            "risk": "Inválida",
+            "score": 0,
+            "findings": ["Informe uma URL HTTP ou HTTPS válida."],
+        }
 
-    hostname = parsed.hostname.lower()
-    if parsed.scheme == "http":
-        findings.append("A conexão não usa HTTPS.")
-        score += 2
-    if parsed.username or parsed.password:
-        findings.append("A URL contém credenciais embutidas.")
-        score += 3
-    if "@" in parsed.netloc:
-        findings.append("O caractere @ pode ocultar o destino real.")
-        score += 2
-    if hostname.startswith("xn--") or ".xn--" in hostname:
-        findings.append("O domínio usa representação Punycode.")
-        score += 2
+    dominio = partes_url.hostname.lower()
+    if partes_url.scheme == "http":
+        observacoes.append("A conexão não usa HTTPS.")
+        pontuacao += 2
+    if partes_url.username or partes_url.password:
+        observacoes.append("A URL contém credenciais embutidas.")
+        pontuacao += 3
+    if "@" in partes_url.netloc:
+        observacoes.append("O caractere @ pode ocultar o destino real.")
+        pontuacao += 2
+    if dominio.startswith("xn--") or ".xn--" in dominio:
+        observacoes.append("O domínio usa representação Punycode.")
+        pontuacao += 2
     try:
-        ip_address(hostname)
+        ip_address(dominio)
     except ValueError:
         pass
     else:
-        findings.append("O destino é um endereço IP, não um domínio.")
-        score += 2
-    if len(candidate) > 120:
-        findings.append("A URL é excepcionalmente longa.")
-        score += 1
+        observacoes.append("O destino é um endereço IP, não um domínio.")
+        pontuacao += 2
+    if len(url_informada) > 120:
+        observacoes.append("A URL é excepcionalmente longa.")
+        pontuacao += 1
 
-    risk = "Baixo" if score <= 1 else "Moderado" if score <= 3 else "Alto"
-    if not findings:
-        findings.append("Nenhum sinal básico de risco foi identificado.")
-    return {"url": candidate, "risk": risk, "score": score, "findings": findings}
+    if pontuacao <= 1:
+        risco = "Baixo"
+    elif pontuacao <= 3:
+        risco = "Moderado"
+    else:
+        risco = "Alto"
+
+    if not observacoes:
+        observacoes.append("Nenhum sinal básico de risco foi identificado.")
+    return {
+        "url": url_informada,
+        "risk": risco,
+        "score": pontuacao,
+        "findings": observacoes,
+    }
 
 
-def analyze_ssh_logs(log_text: str) -> dict[str, object]:
-    failures: list[dict[str, str]] = []
-    source_ips: set[str] = set()
-    pattern = re.compile(
+def analyze_ssh_logs(texto_logs: str) -> dict[str, object]:
+    falhas = []
+    ips_origem = set()
+    padrao_falha = re.compile(
         r"Failed password for (?:invalid user )?(?P<user>\S+) from "
         r"(?P<ip>\S+)"
     )
-    source_pattern = re.compile(r"\bfrom (?P<ip>\S+)")
+    padrao_origem = re.compile(r"\bfrom (?P<ip>\S+)")
 
-    for line in log_text.splitlines():
-        source_match = source_pattern.search(line)
-        if source_match:
-            candidate_ip = source_match.group("ip").rstrip(",")
+    for linha in texto_logs.splitlines():
+        origem_encontrada = padrao_origem.search(linha)
+        if origem_encontrada:
+            ip_encontrado = origem_encontrada.group("ip").rstrip(",")
             try:
-                ip_address(candidate_ip)
+                ip_address(ip_encontrado)
             except ValueError:
                 pass
             else:
-                source_ips.add(candidate_ip)
+                ips_origem.add(ip_encontrado)
 
-        match = pattern.search(line)
-        if match:
-            failures.append(
-                {"user": match.group("user"), "ip": match.group("ip")}
+        falha_encontrada = padrao_falha.search(linha)
+        if falha_encontrada:
+            falhas.append(
+                {
+                    "user": falha_encontrada.group("user"),
+                    "ip": falha_encontrada.group("ip"),
+                }
             )
 
-    by_ip: dict[str, int] = {}
-    for failure in failures:
-        ip = failure["ip"]
-        by_ip[ip] = by_ip.get(ip, 0) + 1
+    tentativas_por_ip = {}
+    for falha in falhas:
+        ip = falha["ip"]
+        if ip not in tentativas_por_ip:
+            tentativas_por_ip[ip] = 0
+        tentativas_por_ip[ip] += 1
 
-    top_attacker = max(by_ip, key=by_ip.get) if by_ip else None
-    total_failures = len(failures)
-    risk = "Baixo" if total_failures < 5 else "Moderado" if total_failures < 10 else "Alto"
+    ip_principal = None
+    tentativas_principais = 0
+    for ip, tentativas in tentativas_por_ip.items():
+        if tentativas > tentativas_principais:
+            ip_principal = ip
+            tentativas_principais = tentativas
+
+    total_falhas = len(falhas)
+    if total_falhas < 5:
+        risco = "Baixo"
+    elif total_falhas < 10:
+        risco = "Moderado"
+    else:
+        risco = "Alto"
+
     return {
-        "total_failures": total_failures,
-        "unique_ips": len(source_ips),
-        "top_attacker": top_attacker,
-        "top_attacker_attempts": by_ip.get(top_attacker, 0) if top_attacker else 0,
-        "risk": risk,
+        "total_failures": total_falhas,
+        "unique_ips": len(ips_origem),
+        "top_attacker": ip_principal,
+        "top_attacker_attempts": tentativas_principais,
+        "risk": risco,
     }
 
 
-def compare_file_integrity(original: str, current: str) -> dict[str, object]:
-    original_hash = hashlib.sha256(original.encode("utf-8")).hexdigest()
-    current_hash = hashlib.sha256(current.encode("utf-8")).hexdigest()
+def compare_file_integrity(original: str, atual: str) -> dict[str, object]:
+    hash_original = hashlib.sha256(original.encode("utf-8")).hexdigest()
+    hash_atual = hashlib.sha256(atual.encode("utf-8")).hexdigest()
+    alterado = hash_original != hash_atual
+
+    if alterado:
+        situacao = "Alterado"
+    else:
+        situacao = "Íntegro"
+
     return {
-        "original_hash": original_hash,
-        "current_hash": current_hash,
-        "changed": original_hash != current_hash,
-        "status": "Alterado" if original_hash != current_hash else "Íntegro",
+        "original_hash": hash_original,
+        "current_hash": hash_atual,
+        "changed": alterado,
+        "status": situacao,
     }
 
 
-def analyze_password(password: str) -> dict[str, object]:
-    findings: list[str] = []
-    common_passwords = {"123456", "password", "senha", "qwerty", "admin"}
-    common_password = password.lower() in common_passwords
-    length_points = 2 if len(password) >= 12 else 1 if len(password) >= 8 else 0
-    character_groups = [
-        ("Letras minúsculas", bool(re.search(r"[a-z]", password))),
-        ("Letras maiúsculas", bool(re.search(r"[A-Z]", password))),
-        ("Números", bool(re.search(r"\d", password))),
-        ("Símbolos", bool(re.search(r"[^A-Za-z0-9]", password))),
+def analyze_password(senha: str) -> dict[str, object]:
+    observacoes = []
+    senhas_comuns = {"123456", "password", "senha", "qwerty", "admin"}
+    senha_comum = senha.lower() in senhas_comuns
+
+    if len(senha) >= 12:
+        pontos_comprimento = 2
+    elif len(senha) >= 8:
+        pontos_comprimento = 1
+    else:
+        pontos_comprimento = 0
+
+    grupos_caracteres = [
+        ("Letras minúsculas", bool(re.search(r"[a-z]", senha))),
+        ("Letras maiúsculas", bool(re.search(r"[A-Z]", senha))),
+        ("Números", bool(re.search(r"\d", senha))),
+        ("Símbolos", bool(re.search(r"[^A-Za-z0-9]", senha))),
     ]
-    criteria = [
+    criterios = [
         {
             "label": "Comprimento: 8 a 11 caracteres vale 1 ponto; 12 ou mais vale 2",
-            "points": length_points,
+            "points": pontos_comprimento,
             "max_points": 2,
-        },
-        *[
-            {"label": label, "points": int(present), "max_points": 1}
-            for label, present in character_groups
-        ],
+        }
     ]
+    total_grupos = 0
+    for descricao, presente in grupos_caracteres:
+        if presente:
+            pontos = 1
+            total_grupos += 1
+        else:
+            pontos = 0
+        criterios.append({"label": descricao, "points": pontos, "max_points": 1})
 
-    if common_password:
-        findings.append("A senha está entre padrões muito comuns. A pontuação foi zerada.")
-        for criterion in criteria:
-            criterion["points"] = 0
+    if senha_comum:
+        observacoes.append("A senha está entre padrões muito comuns. A pontuação foi zerada.")
+        for criterio in criterios:
+            criterio["points"] = 0
     else:
-        if len(password) < 8:
-            findings.append("Use pelo menos 8 caracteres.")
-        if sum(present for _, present in character_groups) < 3:
-            findings.append("Combine letras maiúsculas, minúsculas, números e símbolos.")
-        if len(set(password.lower())) < max(4, len(password) // 3):
-            findings.append("Evite repetir excessivamente os mesmos caracteres.")
+        if len(senha) < 8:
+            observacoes.append("Use pelo menos 8 caracteres.")
+        if total_grupos < 3:
+            observacoes.append("Combine letras maiúsculas, minúsculas, números e símbolos.")
+        if len(set(senha.lower())) < max(4, len(senha) // 3):
+            observacoes.append("Evite repetir excessivamente os mesmos caracteres.")
 
-    score = sum(criterion["points"] for criterion in criteria)
-    max_score = sum(criterion["max_points"] for criterion in criteria)
-    strength = "Fraca" if score <= 2 else "Moderada" if score <= 4 else "Forte"
-    if not findings:
-        findings.append("A senha atende aos critérios básicos de complexidade.")
+    pontuacao = 0
+    pontuacao_maxima = 0
+    for criterio in criterios:
+        pontuacao += criterio["points"]
+        pontuacao_maxima += criterio["max_points"]
+
+    if pontuacao <= 2:
+        forca = "Fraca"
+    elif pontuacao <= 4:
+        forca = "Moderada"
+    else:
+        forca = "Forte"
+
+    if not observacoes:
+        observacoes.append("A senha atende aos critérios básicos de complexidade.")
     return {
-        "strength": strength,
-        "score": score,
-        "max_score": max_score,
-        "criteria": criteria,
-        "findings": findings,
+        "strength": forca,
+        "score": pontuacao,
+        "max_score": pontuacao_maxima,
+        "criteria": criterios,
+        "findings": observacoes,
     }
 
 
-def generate_password(
-    length: int, include_symbols: bool = True
-) -> str:
-    if length < 8 or length > 128:
+def generate_password(comprimento: int, incluir_simbolos: bool = True) -> str:
+    if comprimento < 8 or comprimento > 128:
         raise ValueError("O comprimento deve estar entre 8 e 128 caracteres.")
 
-    groups = [string.ascii_lowercase, string.ascii_uppercase, string.digits]
-    if include_symbols:
-        groups.append(string.punctuation)
+    grupos = [string.ascii_lowercase, string.ascii_uppercase, string.digits]
+    if incluir_simbolos:
+        grupos.append(string.punctuation)
 
-    password = [secrets.choice(group) for group in groups]
-    alphabet = "".join(groups)
-    password.extend(secrets.choice(alphabet) for _ in range(length - len(password)))
-    secrets.SystemRandom().shuffle(password)
-    return "".join(password)
+    senha = []
+    for grupo in grupos:
+        senha.append(secrets.choice(grupo))
+
+    caracteres_disponiveis = "".join(grupos)
+    caracteres_restantes = comprimento - len(senha)
+    for _ in range(caracteres_restantes):
+        senha.append(secrets.choice(caracteres_disponiveis))
+
+    secrets.SystemRandom().shuffle(senha)
+    return "".join(senha)
 
 
-def extract_iocs(text: str) -> dict[str, list[str]]:
-    patterns = {
+def extract_iocs(texto: str) -> dict[str, list[str]]:
+    padroes = {
         "ips": r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
         "domains": r"\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b",
         "urls": r"https?://[^\s<>'\"]+",
         "emails": r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b",
         "hashes": r"\b[a-fA-F0-9]{32}(?:[a-fA-F0-9]{8}|[a-fA-F0-9]{32})?\b",
     }
-    results: dict[str, list[str]] = {}
-    for category, pattern in patterns.items():
-        matches = re.findall(pattern, text, flags=re.IGNORECASE)
-        results[category] = list(dict.fromkeys(matches))
-    return results
+    resultados = {}
+    for categoria, padrao in padroes.items():
+        ocorrencias = re.findall(padrao, texto, flags=re.IGNORECASE)
+        resultados[categoria] = []
+        indicadores_encontrados = set()
+        for indicador in ocorrencias:
+            if indicador not in indicadores_encontrados:
+                resultados[categoria].append(indicador)
+                indicadores_encontrados.add(indicador)
+    return resultados
 
 
-def decode_base64(value: str) -> str:
-    compact_value = re.sub(r"\s+", "", value)
+def decode_base64(valor: str) -> str:
+    valor_sem_espacos = re.sub(r"\s+", "", valor)
     try:
-        decoded = base64.b64decode(compact_value, validate=True)
-        return decoded.decode("utf-8")
-    except (ValueError, UnicodeDecodeError) as exc:
-        raise ValueError("Informe um valor Base64 válido contendo texto UTF-8.") from exc
+        conteudo_decodificado = base64.b64decode(valor_sem_espacos, validate=True)
+        return conteudo_decodificado.decode("utf-8")
+    except (ValueError, UnicodeDecodeError) as erro:
+        raise ValueError("Informe um valor Base64 válido contendo texto UTF-8.") from erro
 
 
 def validate_email(email: str) -> dict[str, object]:
-    """Valida um endereço de e-mail com verificações de padrão e segurança."""
     email = email.strip().lower()
-    findings: list[str] = []
-    score = 0
-    valid = True
+    observacoes = []
+    pontuacao = 0
+    valido = True
 
-    pattern = r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
-    if not re.match(pattern, email):
-        findings.append("O formato não segue o padrão de e-mail válido.")
-        valid = False
+    padrao = r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+    if not re.match(padrao, email):
+        observacoes.append("O formato não segue o padrão de e-mail válido.")
+        valido = False
     else:
-        score += 1
-        local, domain = email.rsplit("@", 1)
+        pontuacao += 1
+        parte_local, dominio = email.rsplit("@", 1)
 
-        if len(local) > 64:
-            findings.append("A parte antes do @ excede 64 caracteres.")
-        elif len(local) < 1:
-            findings.append("A parte local está vazia.")
+        if len(parte_local) > 64:
+            observacoes.append("A parte antes do @ excede 64 caracteres.")
+        elif len(parte_local) < 1:
+            observacoes.append("A parte local está vazia.")
         else:
-            score += 1
+            pontuacao += 1
 
         if ".." in email:
-            findings.append("Contém pontos consecutivos (padrão inválido).")
+            observacoes.append("Contém pontos consecutivos (padrão inválido).")
         if email.startswith(".") or email.startswith("@"):
-            findings.append("Começa com caractere inválido.")
+            observacoes.append("Começa com caractere inválido.")
         if email.endswith("."):
-            findings.append("Termina com ponto.")
+            observacoes.append("Termina com ponto.")
 
-        common_domains = {"gmail.com", "hotmail.com", "outlook.com", "yahoo.com"}
-        if domain in common_domains:
-            findings.append(f"Domínio '{domain}' é comum; verifique se é esperado em seu contexto.")
+        dominios_comuns = {"gmail.com", "hotmail.com", "outlook.com", "yahoo.com"}
+        if dominio in dominios_comuns:
+            observacoes.append(f"Domínio '{dominio}' é comum; verifique se é esperado em seu contexto.")
 
-    status = "Válido" if valid and score >= 2 else "Inválido"
-    if not findings:
-        findings.append("O e-mail atende aos critérios básicos de validação.")
-    return {"status": status, "findings": findings, "valid": valid}
+    if valido and pontuacao >= 2:
+        situacao = "Válido"
+    else:
+        situacao = "Inválido"
+
+    if not observacoes:
+        observacoes.append("O e-mail atende aos critérios básicos de validação.")
+    return {"status": situacao, "findings": observacoes, "valid": valido}
 
 
 def create_app() -> Flask:
-    app = Flask(__name__)
+    aplicacao = Flask(__name__)
 
-    # Lista de ferramentas disponíveis
-    tools = [
+    ferramentas = [
         {
             "name": "Analisador de URLs",
             "description": "Identifique sinais básicos de risco em links.",
@@ -286,91 +358,132 @@ def create_app() -> Flask:
         },
     ]
 
-    @app.get("/")
+    @aplicacao.get("/")
     def index():
-        return render_template("index.html", tools=tools, show_tools_menu=False)
+        return render_template("index.html", tools=ferramentas, show_tools_menu=False)
 
-    @app.route("/tools/url-analyzer", methods=["GET", "POST"])
+    @aplicacao.route("/tools/url-analyzer", methods=["GET", "POST"])
     def url_analyzer():
-        result = None
+        resultado = None
         if request.method == "POST":
-            result = analyze_url(request.form.get("url", ""))
-        return render_template("url_analyzer.html", result=result, tools=tools, show_tools_menu=True)
+            url = request.form.get("url", "")
+            resultado = analyze_url(url)
+        return render_template(
+            "url_analyzer.html",
+            result=resultado,
+            tools=ferramentas,
+            show_tools_menu=True,
+        )
 
-    @app.route("/tools/ssh-log-analyzer", methods=["GET", "POST"])
+    @aplicacao.route("/tools/ssh-log-analyzer", methods=["GET", "POST"])
     def ssh_log_analyzer():
-        result = None
+        resultado = None
         if request.method == "POST":
-            result = analyze_ssh_logs(request.form.get("logs", ""))
-        return render_template("ssh_log_analyzer.html", result=result, tools=tools, show_tools_menu=True)
+            logs = request.form.get("logs", "")
+            resultado = analyze_ssh_logs(logs)
+        return render_template(
+            "ssh_log_analyzer.html",
+            result=resultado,
+            tools=ferramentas,
+            show_tools_menu=True,
+        )
 
-    @app.route("/tools/integrity-monitor", methods=["GET", "POST"])
-    @app.route("/tools/integrity-monitor", methods=["GET", "POST"])
+    @aplicacao.route("/tools/integrity-monitor", methods=["GET", "POST"])
+    @aplicacao.route("/tools/integrity-monitor", methods=["GET", "POST"])
     def integrity_monitor():
-        result = None
+        resultado = None
         if request.method == "POST":
-            result = compare_file_integrity(
-                request.form.get("original", ""),
-                request.form.get("current", ""),
-            )
-        return render_template("integrity_monitor.html", result=result, tools=tools, show_tools_menu=True)
+            original = request.form.get("original", "")
+            atual = request.form.get("current", "")
+            resultado = compare_file_integrity(original, atual)
+        return render_template(
+            "integrity_monitor.html",
+            result=resultado,
+            tools=ferramentas,
+            show_tools_menu=True,
+        )
 
-    @app.route("/tools/password-analyzer", methods=["GET", "POST"])
+    @aplicacao.route("/tools/password-analyzer", methods=["GET", "POST"])
     def password_analyzer():
-        result = None
+        resultado = None
         if request.method == "POST":
-            result = analyze_password(request.form.get("password", ""))
-        return render_template("password_analyzer.html", result=result, tools=tools, show_tools_menu=True)
+            senha = request.form.get("password", "")
+            resultado = analyze_password(senha)
+        return render_template(
+            "password_analyzer.html",
+            result=resultado,
+            tools=ferramentas,
+            show_tools_menu=True,
+        )
 
-    @app.route("/tools/password-generator", methods=["GET", "POST"])
+    @aplicacao.route("/tools/password-generator", methods=["GET", "POST"])
     def password_generator():
-        result = None
-        error = None
+        resultado = None
+        erro = None
         if request.method == "POST":
             try:
-                length = int(request.form.get("length", "16"))
+                comprimento = int(request.form.get("length", "16"))
             except ValueError:
-                error = "Informe um comprimento numérico."
+                erro = "Informe um comprimento numérico."
             else:
+                incluir_simbolos = request.form.get("include_symbols") == "on"
                 try:
-                    result = generate_password(
-                        length,
-                        request.form.get("include_symbols") == "on",
-                    )
-                except ValueError as exc:
-                    error = str(exc)
+                    resultado = generate_password(comprimento, incluir_simbolos)
+                except ValueError as erro_capturado:
+                    erro = str(erro_capturado)
         return render_template(
-            "password_generator.html", result=result, error=error, tools=tools, show_tools_menu=True
+            "password_generator.html",
+            result=resultado,
+            error=erro,
+            tools=ferramentas,
+            show_tools_menu=True,
         )
 
-    @app.route("/tools/ioc-extractor", methods=["GET", "POST"])
+    @aplicacao.route("/tools/ioc-extractor", methods=["GET", "POST"])
     def ioc_extractor():
-        result = None
+        resultado = None
         if request.method == "POST":
-            result = extract_iocs(request.form.get("text", ""))
-        return render_template("ioc_extractor.html", result=result, tools=tools, show_tools_menu=True)
-
-    @app.route("/tools/base64-decoder", methods=["GET", "POST"])
-    def base64_decoder():
-        result = None
-        error = None
-        if request.method == "POST":
-            try:
-                result = decode_base64(request.form.get("value", ""))
-            except ValueError as exc:
-                error = str(exc)
+            texto = request.form.get("text", "")
+            resultado = extract_iocs(texto)
         return render_template(
-            "base64_decoder.html", result=result, error=error, tools=tools, show_tools_menu=True
+            "ioc_extractor.html",
+            result=resultado,
+            tools=ferramentas,
+            show_tools_menu=True,
         )
 
-    @app.route("/tools/email-validator", methods=["GET", "POST"])
-    def email_validator():
-        result = None
+    @aplicacao.route("/tools/base64-decoder", methods=["GET", "POST"])
+    def base64_decoder():
+        resultado = None
+        erro = None
         if request.method == "POST":
-            result = validate_email(request.form.get("email", ""))
-        return render_template("email_validator.html", result=result, tools=tools, show_tools_menu=True)
+            valor = request.form.get("value", "")
+            try:
+                resultado = decode_base64(valor)
+            except ValueError as erro_capturado:
+                erro = str(erro_capturado)
+        return render_template(
+            "base64_decoder.html",
+            result=resultado,
+            error=erro,
+            tools=ferramentas,
+            show_tools_menu=True,
+        )
 
-    return app
+    @aplicacao.route("/tools/email-validator", methods=["GET", "POST"])
+    def email_validator():
+        resultado = None
+        if request.method == "POST":
+            email = request.form.get("email", "")
+            resultado = validate_email(email)
+        return render_template(
+            "email_validator.html",
+            result=resultado,
+            tools=ferramentas,
+            show_tools_menu=True,
+        )
+
+    return aplicacao
 
 
 app = create_app()

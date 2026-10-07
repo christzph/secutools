@@ -14,28 +14,28 @@ from app import (
 
 
 def test_analyze_url_flags_http_and_embedded_credentials():
-    result = analyze_url("http://admin:secret@example.com/login")
+    resultado = analyze_url("http://admin:secret@example.com/login")
 
-    assert result["risk"] == "Alto"
-    assert "A conexão não usa HTTPS." in result["findings"]
-    assert "A URL contém credenciais embutidas." in result["findings"]
+    assert resultado["risk"] == "Alto"
+    assert "A conexão não usa HTTPS." in resultado["findings"]
+    assert "A URL contém credenciais embutidas." in resultado["findings"]
 
 
 def test_analyze_url_accepts_safe_https_url():
-    result = analyze_url("https://example.com")
+    resultado = analyze_url("https://example.com")
 
-    assert result["risk"] == "Baixo"
-    assert result["findings"] == ["Nenhum sinal básico de risco foi identificado."]
+    assert resultado["risk"] == "Baixo"
+    assert resultado["findings"] == ["Nenhum sinal básico de risco foi identificado."]
 
 
 def test_url_analyzer_renders_analysis_result():
-    client = create_app().test_client()
+    cliente = create_app().test_client()
 
-    response = client.post("/tools/url-analyzer", data={"url": "https://example.com"})
+    resposta = cliente.post("/tools/url-analyzer", data={"url": "https://example.com"})
 
-    assert response.status_code == 200
-    assert b"Baixo" in response.data
-    assert b"RESULTADO" in response.data
+    assert resposta.status_code == 200
+    assert b"Baixo" in resposta.data
+    assert b"RESULTADO" in resposta.data
 
 
 def test_analyze_ssh_logs_counts_attempts_by_ip():
@@ -48,59 +48,59 @@ def test_analyze_ssh_logs_counts_attempts_by_ip():
         ]
     )
 
-    result = analyze_ssh_logs(logs)
+    resultado = analyze_ssh_logs(logs)
 
-    assert result["total_failures"] == 3
-    assert result["unique_ips"] == 3
-    assert result["top_attacker"] == "192.0.2.10"
-    assert result["top_attacker_attempts"] == 2
+    assert resultado["total_failures"] == 3
+    assert resultado["unique_ips"] == 3
+    assert resultado["top_attacker"] == "192.0.2.10"
+    assert resultado["top_attacker_attempts"] == 2
 
 
 def test_ssh_log_analyzer_renders_analysis_result():
-    client = create_app().test_client()
+    cliente = create_app().test_client()
 
-    response = client.post(
+    resposta = cliente.post(
         "/tools/ssh-log-analyzer",
         data={
             "logs": "Failed password for root from 192.0.2.10 port 22 ssh2",
         },
     )
 
-    assert response.status_code == 200
-    assert b">Risco<" in response.data
-    assert b">Falhas<" in response.data
+    assert resposta.status_code == 200
+    assert b">Risco<" in resposta.data
+    assert b">Falhas<" in resposta.data
 
 
 def test_compare_file_integrity_detects_changes():
-    result = compare_file_integrity("versao original", "versao alterada")
+    resultado = compare_file_integrity("versao original", "versao alterada")
 
-    assert result["changed"] is True
-    assert result["status"] == "Alterado"
-    assert result["original_hash"] != result["current_hash"]
+    assert resultado["changed"] is True
+    assert resultado["status"] == "Alterado"
+    assert resultado["original_hash"] != resultado["current_hash"]
 
 
 def test_integrity_monitor_renders_hashes():
-    client = create_app().test_client()
+    cliente = create_app().test_client()
 
-    response = client.post(
+    resposta = cliente.post(
         "/tools/integrity-monitor",
         data={"original": "config=ok", "current": "config=changed"},
     )
 
-    assert response.status_code == 200
-    assert b">Status<" in response.data
-    assert b"Alterado" in response.data
+    assert resposta.status_code == 200
+    assert b">Status<" in resposta.data
+    assert b"Alterado" in resposta.data
 
 
 def test_analyze_password_flags_common_password():
-    result = analyze_password("password")
+    resultado = analyze_password("password")
 
-    assert result["strength"] == "Fraca"
-    assert "padrões muito comuns" in result["findings"][0]
+    assert resultado["strength"] == "Fraca"
+    assert "padrões muito comuns" in resultado["findings"][0]
 
 
 @pytest.mark.parametrize(
-    ("password", "expected_score", "expected_strength"),
+    ("senha", "pontuacao_esperada", "forca_esperada"),
     [
         ("", 0, "Fraca"),
         ("aaa", 1, "Fraca"),
@@ -113,64 +113,64 @@ def test_analyze_password_flags_common_password():
         ("PASSWORD", 0, "Fraca"),
     ],
 )
-def test_password_score_matches_criteria_and_scale(password, expected_score, expected_strength):
-    result = analyze_password(password)
+def test_password_score_matches_criteria_and_scale(senha, pontuacao_esperada, forca_esperada):
+    resultado = analyze_password(senha)
 
-    assert result["score"] == expected_score
-    assert result["strength"] == expected_strength
-    assert result["max_score"] == 6
-    assert 0 <= result["score"] <= result["max_score"]
-    assert sum(criterion["points"] for criterion in result["criteria"]) == result["score"]
-    assert sum(criterion["max_points"] for criterion in result["criteria"]) == result["max_score"]
+    assert resultado["score"] == pontuacao_esperada
+    assert resultado["strength"] == forca_esperada
+    assert resultado["max_score"] == 6
+    assert 0 <= resultado["score"] <= resultado["max_score"]
+    assert sum(criterio["points"] for criterio in resultado["criteria"]) == resultado["score"]
+    assert sum(criterio["max_points"] for criterio in resultado["criteria"]) == resultado["max_score"]
 
 
 def test_password_analyzer_does_not_render_password():
-    client = create_app().test_client()
-    password = "Senha-Forte-2026!"
+    cliente = create_app().test_client()
+    senha = "Senha-Forte-2026!"
 
-    response = client.post("/tools/password-analyzer", data={"password": password})
+    resposta = cliente.post("/tools/password-analyzer", data={"password": senha})
 
-    assert response.status_code == 200
-    assert password.encode() not in response.data
-    assert b"For\xc3\xa7a Estimada" in response.data
-    assert b"Forte" in response.data
-    assert b">6/6</strong>" in response.data
-    assert "Como a pontuação é calculada" in response.get_data(as_text=True)
+    assert resposta.status_code == 200
+    assert senha.encode() not in resposta.data
+    assert b"For\xc3\xa7a Estimada" in resposta.data
+    assert b"Forte" in resposta.data
+    assert b">6/6</strong>" in resposta.data
+    assert "Como a pontuação é calculada" in resposta.get_data(as_text=True)
 
 
 def test_generate_password_respects_length_and_character_groups():
-    password = generate_password(24)
+    senha = generate_password(24)
 
-    assert len(password) == 24
-    assert any(character.islower() for character in password)
-    assert any(character.isupper() for character in password)
-    assert any(character.isdigit() for character in password)
-    assert any(character in "!#$%&()*+,-./:;<=>?@[\\]^_`{|}~" for character in password)
+    assert len(senha) == 24
+    assert any(caractere.islower() for caractere in senha)
+    assert any(caractere.isupper() for caractere in senha)
+    assert any(caractere.isdigit() for caractere in senha)
+    assert any(caractere in "!#$%&()*+,-./:;<=>?@[\\]^_`{|}~" for caractere in senha)
 
 
 def test_password_generator_rejects_invalid_length():
-    client = create_app().test_client()
+    cliente = create_app().test_client()
 
-    response = client.post(
+    resposta = cliente.post(
         "/tools/password-generator",
         data={"length": "4", "include_symbols": "on"},
     )
 
-    assert response.status_code == 200
-    assert b"entre 8 e 128" in response.data
+    assert resposta.status_code == 200
+    assert b"entre 8 e 128" in resposta.data
 
 
 def test_extract_iocs_groups_unique_indicators():
-    result = extract_iocs(
+    resultado = extract_iocs(
         "Conexão para https://malware.example.test/login de 203.0.113.10 "
         "e contato soc@example.test. Hash "
         "0123456789abcdef0123456789abcdef."
     )
 
-    assert result["ips"] == ["203.0.113.10"]
-    assert result["urls"] == ["https://malware.example.test/login"]
-    assert result["emails"] == ["soc@example.test"]
-    assert result["hashes"] == ["0123456789abcdef0123456789abcdef"]
+    assert resultado["ips"] == ["203.0.113.10"]
+    assert resultado["urls"] == ["https://malware.example.test/login"]
+    assert resultado["emails"] == ["soc@example.test"]
+    assert resultado["hashes"] == ["0123456789abcdef0123456789abcdef"]
 
 
 def test_base64_decoder_returns_utf8_text():
@@ -178,40 +178,40 @@ def test_base64_decoder_returns_utf8_text():
 
 
 def test_base64_decoder_shows_invalid_input_error():
-    client = create_app().test_client()
+    cliente = create_app().test_client()
 
-    response = client.post("/tools/base64-decoder", data={"value": "not-base64"})
+    resposta = cliente.post("/tools/base64-decoder", data={"value": "not-base64"})
 
-    assert response.status_code == 200
-    assert b"Base64 v\xc3\xa1lido" in response.data
+    assert resposta.status_code == 200
+    assert b"Base64 v\xc3\xa1lido" in resposta.data
 
 
 def test_validate_email_accepts_valid_format():
-    result = validate_email("user@example.com")
+    resultado = validate_email("user@example.com")
 
-    assert result["valid"] is True
-    assert result["status"] == "Válido"
+    assert resultado["valid"] is True
+    assert resultado["status"] == "Válido"
 
 
 def test_validate_email_rejects_invalid_format():
-    result = validate_email("not-an-email")
+    resultado = validate_email("not-an-email")
 
-    assert result["valid"] is False
-    assert result["status"] == "Inválido"
-    assert "O formato não segue o padrão de e-mail válido." in result["findings"]
+    assert resultado["valid"] is False
+    assert resultado["status"] == "Inválido"
+    assert "O formato não segue o padrão de e-mail válido." in resultado["findings"]
 
 
 def test_validate_email_detects_common_domains():
-    result = validate_email("user@gmail.com")
+    resultado = validate_email("user@gmail.com")
 
-    assert result["valid"] is True
-    assert any("comum" in finding for finding in result["findings"])
+    assert resultado["valid"] is True
+    assert any("comum" in observacao for observacao in resultado["findings"])
 
 
 def test_email_validator_renders_validation_result():
-    client = create_app().test_client()
+    cliente = create_app().test_client()
 
-    response = client.post("/tools/email-validator", data={"email": "test@example.com"})
+    resposta = cliente.post("/tools/email-validator", data={"email": "test@example.com"})
 
-    assert response.status_code == 200
-    assert b"V\xc3\xa1lido" in response.data
+    assert resposta.status_code == 200
+    assert b"V\xc3\xa1lido" in resposta.data
