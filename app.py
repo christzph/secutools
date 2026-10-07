@@ -104,36 +104,51 @@ def compare_file_integrity(original: str, current: str) -> dict[str, object]:
 
 def analyze_password(password: str) -> dict[str, object]:
     findings: list[str] = []
-    score = 0
     common_passwords = {"123456", "password", "senha", "qwerty", "admin"}
+    common_password = password.lower() in common_passwords
+    length_points = 2 if len(password) >= 12 else 1 if len(password) >= 8 else 0
+    character_groups = [
+        ("Letras minúsculas", bool(re.search(r"[a-z]", password))),
+        ("Letras maiúsculas", bool(re.search(r"[A-Z]", password))),
+        ("Números", bool(re.search(r"\d", password))),
+        ("Símbolos", bool(re.search(r"[^A-Za-z0-9]", password))),
+    ]
+    criteria = [
+        {
+            "label": "Comprimento: 8 a 11 caracteres vale 1 ponto; 12 ou mais vale 2",
+            "points": length_points,
+            "max_points": 2,
+        },
+        *[
+            {"label": label, "points": int(present), "max_points": 1}
+            for label, present in character_groups
+        ],
+    ]
 
-    if password.lower() in common_passwords:
-        findings.append("A senha está entre padrões muito comuns.")
-        score = 0
+    if common_password:
+        findings.append("A senha está entre padrões muito comuns. A pontuação foi zerada.")
+        for criterion in criteria:
+            criterion["points"] = 0
     else:
-        if len(password) >= 12:
-            score += 2
-        elif len(password) >= 8:
-            score += 1
-        else:
+        if len(password) < 8:
             findings.append("Use pelo menos 8 caracteres.")
-
-        character_groups = [
-            bool(re.search(r"[a-z]", password)),
-            bool(re.search(r"[A-Z]", password)),
-            bool(re.search(r"\d", password)),
-            bool(re.search(r"[^A-Za-z0-9]", password)),
-        ]
-        score += sum(character_groups)
-        if sum(character_groups) < 3:
+        if sum(present for _, present in character_groups) < 3:
             findings.append("Combine letras maiúsculas, minúsculas, números e símbolos.")
         if len(set(password.lower())) < max(4, len(password) // 3):
             findings.append("Evite repetir excessivamente os mesmos caracteres.")
 
+    score = sum(criterion["points"] for criterion in criteria)
+    max_score = sum(criterion["max_points"] for criterion in criteria)
     strength = "Fraca" if score <= 2 else "Moderada" if score <= 4 else "Forte"
     if not findings:
         findings.append("A senha atende aos critérios básicos de complexidade.")
-    return {"strength": strength, "score": score, "findings": findings}
+    return {
+        "strength": strength,
+        "score": score,
+        "max_score": max_score,
+        "criteria": criteria,
+        "findings": findings,
+    }
 
 
 def generate_password(

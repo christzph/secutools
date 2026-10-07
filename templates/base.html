@@ -13,7 +13,10 @@
   <header class="header">
     <nav class="navbar" aria-label="Navegação do projeto">
       <a href="{{ url_for('index') }}" class="navbar__brand">
-        <span class="navbar__title">SecuTools</span>
+        <img
+          src="{{ url_for('static', filename='img/logo.png')}}"
+          alt="SecuTools"
+          class="navbar__logo">
       </a>
       
       <button type="button" class="navbar__menu-toggle" aria-label="Abrir menu de ferramentas" aria-expanded="false" aria-controls="tools-menu">

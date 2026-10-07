@@ -1,12 +1,4 @@
-/* ============================================================================
-   SECUTOOLS - MODERN RESPONSIVE STYLESHEET
-   Using BEM (Block Element Modifier) Methodology
-   Compatible with all devices and browsers
-   ============================================================================ */
-
-/* CSS Variables & Color Palette */
 :root {
-  /* Color Scheme */
   --bg-primary: #0c1222;
   --bg-secondary: #141d33;
   --bg-tertiary: #1a2847;
@@ -20,7 +12,6 @@
   --success-color: #10b981;
   --border-color: #26324d;
   
-  /* Typography */
   --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   --font-size-xs: 0.75rem;
@@ -32,7 +23,6 @@
   --font-size-3xl: 1.875rem;
   --font-size-4xl: 2.25rem;
   
-  /* Spacing */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
@@ -40,25 +30,18 @@
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
   
-  /* Radius */
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 1rem;
   
-  /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
   
-  /* Transitions */
   --transition-fast: 150ms ease-in-out;
   --transition-base: 200ms ease-in-out;
   --transition-slow: 300ms ease-in-out;
 }
-
-/* ============================================================================
-   GLOBAL STYLES
-   ============================================================================ */
 
 *,
 *::before,
@@ -87,10 +70,6 @@ body {
 main {
   flex: 1;
 }
-
-/* ============================================================================
-   TYPOGRAPHY
-   ============================================================================ */
 
 h1,
 h2,
@@ -150,10 +129,6 @@ pre code {
   padding: 0;
 }
 
-/* ============================================================================
-   HEADER & NAVIGATION
-   ============================================================================ */
-
 .header {
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
@@ -187,6 +162,12 @@ pre code {
   transform: scale(1.05);
 }
 
+.navbar__logo {
+  display: block;
+  height: 40px;
+  width: auto;
+}
+
 .navbar__title {
   font-size: clamp(1rem, 3vw, 1.25rem);
   font-weight: 800;
@@ -197,7 +178,6 @@ pre code {
   display: none;
 }
 
-/* Menu Toggle Button */
 .navbar__menu-toggle {
   display: none;
   background: none;
@@ -229,7 +209,6 @@ pre code {
   transform: rotate(-45deg) translate(7px, -7px);
 }
 
-/* Links visíveis em telas maiores; menu recolhível em telas menores. */
 .navbar__menu {
   display: flex;
   flex-wrap: wrap;
@@ -294,7 +273,6 @@ pre code {
     flex: 1;
     min-width: 0;
     overflow: hidden;
-    /* O fade ocupa o padding à direita quando o nome cabe inteiro. */
     margin-right: calc(-1 * var(--spacing-md));
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--spacing-md)), transparent);
     mask-image: linear-gradient(to right, #000 calc(100% - var(--spacing-md)), transparent);
@@ -314,10 +292,6 @@ pre code {
   }
 }
 
-/* ============================================================================
-   MAIN CONTENT LAYOUT
-   ============================================================================ */
-
 .main-content {
   flex: 1;
 }
@@ -327,10 +301,6 @@ pre code {
   margin: 0 auto;
   padding: var(--spacing-2xl) var(--spacing-md);
 }
-
-/* ============================================================================
-   HERO SECTION
-   ============================================================================ */
 
 .hero {
   margin-bottom: var(--spacing-2xl);
@@ -366,10 +336,6 @@ pre code {
   max-width: 600px;
   margin-bottom: 0;
 }
-
-/* ============================================================================
-   TOOLS SECTION
-   ============================================================================ */
 
 .tools-section {
   margin-top: var(--spacing-2xl);
@@ -461,7 +427,6 @@ pre code {
   transform: translateX(2px);
 }
 
-/* Expandir o link pelo card, mantendo os textos acima da área clicável. */
 .tool-card__link::after {
   content: "";
   position: absolute;
@@ -473,10 +438,6 @@ pre code {
   outline: 2px solid var(--accent-primary);
   outline-offset: 3px;
 }
-
-/* ============================================================================
-   FORMS
-   ============================================================================ */
 
 .form__group {
   display: flex;
@@ -573,10 +534,6 @@ pre code {
   margin-bottom: var(--spacing-2xl);
 }
 
-/* ============================================================================
-   BUTTONS
-   ============================================================================ */
-
 .button {
   display: inline-flex;
   align-items: center;
@@ -608,10 +565,6 @@ pre code {
   transform: translateY(0);
   box-shadow: var(--shadow-sm);
 }
-
-/* ============================================================================
-   RESULT SECTIONS
-   ============================================================================ */
 
 .result-section {
   background-color: var(--bg-secondary);
@@ -676,10 +629,6 @@ pre code {
   background-color: rgba(16, 185, 129, 0.2);
   color: #6ee7b7;
 }
-
-/* ============================================================================
-   METRICS GRID
-   ============================================================================ */
 
 .metrics-grid {
   display: grid;
@@ -779,10 +728,6 @@ pre code {
   border-color: var(--error-color);
 }
 
-/* ============================================================================
-   FINDINGS & RESULTS
-   ============================================================================ */
-
 .findings-block {
   margin-top: var(--spacing-lg);
 }
@@ -809,10 +754,6 @@ pre code {
   font-size: var(--font-size-sm);
   line-height: 1.6;
 }
-
-/* ============================================================================
-   IOC EXTRACTOR
-   ============================================================================ */
 
 .ioc-results {
   display: grid;
@@ -860,10 +801,6 @@ pre code {
   font-style: italic;
 }
 
-/* ============================================================================
-   GENERATED PASSWORD & DECODED OUTPUT
-   ============================================================================ */
-
 .generated-password-block,
 .decoded-output-block {
   background-color: var(--bg-primary);
@@ -890,10 +827,6 @@ pre code {
   margin-bottom: 0;
 }
 
-/* ============================================================================
-   ALERTS
-   ============================================================================ */
-
 .alert {
   padding: var(--spacing-lg);
   border-radius: var(--radius-md);
@@ -918,10 +851,6 @@ pre code {
   border-color: var(--success-color);
   color: #6ee7b7;
 }
-
-/* ============================================================================
-   CHECKBOXES & INPUTS
-   ============================================================================ */
 
 .checkbox-label {
   display: flex;
@@ -963,10 +892,6 @@ pre code {
   font-weight: bold;
 }
 
-/* ============================================================================
-   FOOTER
-   ============================================================================ */
-
 .footer {
   background-color: var(--bg-secondary);
   border-top: 1px solid var(--border-color);
@@ -977,11 +902,6 @@ pre code {
   margin-top: auto;
 }
 
-/* ============================================================================
-   RESPONSIVE DESIGN
-   ============================================================================ */
-
-/* Tablets & Small Desktops (≤ 1024px) */
 @media (max-width: 1024px) {
   .navbar__menu-toggle {
     display: flex;
@@ -1033,7 +953,6 @@ pre code {
   }
 }
 
-/* Mobile Devices (≤ 768px) */
 @media (max-width: 768px) {
   :root {
     --spacing-lg: 1.25rem;
@@ -1086,7 +1005,6 @@ pre code {
   }
 }
 
-/* Small Mobile Devices (≤ 480px) */
 @media (max-width: 480px) {
   :root {
     --spacing-lg: 1rem;
@@ -1132,7 +1050,6 @@ pre code {
   }
 }
 
-/* Print Styles */
 @media print {
   body {
     background-color: white;

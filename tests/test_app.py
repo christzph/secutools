@@ -1,3 +1,5 @@
+import pytest
+
 from app import (
     analyze_password,
     analyze_ssh_logs,
@@ -97,6 +99,31 @@ def test_analyze_password_flags_common_password():
     assert "padrões muito comuns" in result["findings"][0]
 
 
+@pytest.mark.parametrize(
+    ("password", "expected_score", "expected_strength"),
+    [
+        ("", 0, "Fraca"),
+        ("aaa", 1, "Fraca"),
+        ("abcdefgh", 2, "Fraca"),
+        ("Abcdefgh", 3, "Moderada"),
+        ("Abcdefg1", 4, "Moderada"),
+        ("Abcdef1!", 5, "Forte"),
+        ("Teste123!Ab", 5, "Forte"),
+        ("Teste123!Abc", 6, "Forte"),
+        ("PASSWORD", 0, "Fraca"),
+    ],
+)
+def test_password_score_matches_criteria_and_scale(password, expected_score, expected_strength):
+    result = analyze_password(password)
+
+    assert result["score"] == expected_score
+    assert result["strength"] == expected_strength
+    assert result["max_score"] == 6
+    assert 0 <= result["score"] <= result["max_score"]
+    assert sum(criterion["points"] for criterion in result["criteria"]) == result["score"]
+    assert sum(criterion["max_points"] for criterion in result["criteria"]) == result["max_score"]
+
+
 def test_password_analyzer_does_not_render_password():
     client = create_app().test_client()
     password = "Senha-Forte-2026!"
@@ -107,6 +134,8 @@ def test_password_analyzer_does_not_render_password():
     assert password.encode() not in response.data
     assert b"For\xc3\xa7a Estimada" in response.data
     assert b"Forte" in response.data
+    assert b">6/6</strong>" in response.data
+    assert "Como a pontuação é calculada" in response.get_data(as_text=True)
 
 
 def test_generate_password_respects_length_and_character_groups():
